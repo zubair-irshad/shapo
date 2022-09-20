@@ -1,0 +1,6 @@
+data/*
+env/*
+./env/*
+sdf_latent_codes/all_ws_no_reg_contrastive0.1/*
+wandb/*
+results/*
