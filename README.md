@@ -15,6 +15,10 @@ European Conference on Computer Vision (ECCV), 2022<br>
 [![Explore CenterSnap in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/zubair-irshad/CenterSnap/blob/master/notebook/explore_CenterSnap.ipynb)<br>
 
 <p align="center">
+<img src="demo/mesh_models.gif" width="100%">
+</p>
+
+<p align="center">
 <img src="demo/ShAPO_teaser.gif" width="100%">
 </p>
 
@@ -195,10 +199,10 @@ torchvision==0.8.2
 * This code is built upon the implementation from [SimNet](https://github.com/ToyotaResearchInstitute/simnet)
 
 ## Related Work
-* [ShAPO:tophat:: Implicit Representations for Multi Object Shape Appearance and Pose Optimization, ECCV, 2022](https://zubair-irshad.github.io/projects/ShAPO.html)
+* [CenterSnap: Single-Shot Multi-Object 3D Shape Reconstruction and Categorical 6D Pose and Size Estimation, ICRA, 2022](https://zubair-irshad.github.io/projects/CenterSnap.html)
 
 <p align="center">
-<img src="demo/ShAPO_teaser.gif" width="100%">
+<img src="demo/reconstruction.gif" width="100%">
 </p>
 
 ## Licenses
