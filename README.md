@@ -126,6 +126,10 @@ python prepare_data/distributed_generate_data.py --data_dir /home/ubuntu/shapopl
 
 ShAPO is a two-stage process; First, a single-shot network to predict 3D shape, pose and size codes along with segmentation masks in a per-pixel manner. Second, test-time optimization of joint shape, pose and size codes given a single-view RGB-D observation of a new instance.
 
+<p align="center">
+<img src="demo/architecture.jpg" width="100%">
+</p>
+
 1. Train on NOCS Synthetic (requires 13GB GPU memory):
 ```bash
 ./runner.sh net_train.py @configs/net_config.txt
