@@ -82,3 +82,5 @@ argparse
 h5py
 plyfile
 black
+siren-pytorch
+trimesh

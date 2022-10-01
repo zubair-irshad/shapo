@@ -151,49 +151,20 @@ Download a small NOCS Real subset from [[here](https://www.dropbox.com/s/yfenvre
 ./runner.sh inference/inference_real.py @configs/net_config.txt --data_dir path_to_nocs_test_subset --checkpoint checkpoint_path_here
 ```
 
-You should see the **visualizations** saved in ```results/CenterSnap```. Change the --ouput_path in *config.txt to save them to a different folder
+```
+./runner.sh inference/inference_real.py @configs/net_config.txt --data_dir /home/zubair/shapo/nocs_test_subset/ --checkpoint /home/zubair/shapo/ckpt/epoch_25.ckpt 
+```
+You should see the **visualizations** saved in ```results/ShAPO_real```. Change the --ouput_path in *config.txt to save them to a different folder
 
-4. Optional (Shape Auto-Encoder Pre-training)
+4. Optimization 
 
-We provide pretrained model for shape auto-encoder to be used for data collection and inference. Although our codebase doesn't require separately training the shape auto-encoder, if you would like to do so, we provide additional scripts under **external/shape_pretraining**
-
+```bash
+./runner.sh opt/optimize.py @configs/net_config.txt --data_dir /path/to/nocs_test_subset/ --checkpoint checkpoint_path_here
+```
 
 ## 📝 FAQ
 
-**1.** I am not getting good performance on my custom camera images i.e. Realsense, OAK-D or others.
- 
-- Ans: Since the network was finetuned on the [real-world NOCS data](https://github.com/zubair-irshad/CenterSnap/edit/master/README.md#-training-and-inference) only, currently the pre-trained network gives good 3D prediction for the the following [camera setting](https://github.com/zubair-irshad/CenterSnap/blob/master/simnet/lib/camera.py#L33-L55). To get good prediction on your own camera parameters, make sure to [finetune the network](https://github.com/zubair-irshad/CenterSnap/edit/master/README.md#-training-and-inference) with your own small subset after [pre-training on the synthetic dataset](https://github.com/zubair-irshad/CenterSnap/edit/master/README.md#-training-and-inference). We provide data preparation scripts [here](https://github.com/zubair-irshad/CenterSnap/tree/master/prepare_data).
-
-
-**2.** I am getting ```no cuda GPUs available``` while running colab. 
-
-- Ans: Make sure to follow this instruction to activate GPUs in colab:
-
-```
-Make sure that you have enabled the GPU under Runtime-> Change runtime type!
-```
-
-**3.** I am getting ```raise RuntimeError('received %d items of ancdata' %
-RuntimeError: received 0 items of ancdata``` 
-
-- Ans: Increase ulimit to 2048 or 8096 via ```uimit -n 2048```
-
-**4.** I am getting ``` RuntimeError: CUDA error: no kernel image is available for execution on the device``` or ``` You requested GPUs: [0] But your machine only has: [] ``` 
-
-- Ans: Check your pytorch installation with your cuda installation. Try the following:
-
-
-1. Installing cuda 10.2 and running the same script in requirements.txt
-
-2. Installing the relevant pytorch cuda version i.e. changing this line in the requirements.txt
-
-```
-torch==1.7.1
-torchvision==0.8.2
-```
-
-**5.** I am seeing zero val metrics in ***wandb***
-- Ans: Make sure you threshold the metrics. Since pytorch lightning's first validation check metric is high, it seems like all other metrics are zero. Please threshold manually to remove the outlier metric in wandb to see actual metrics.   
+Please see FAQs from CenterSnap [here](https://github.com/zubair-irshad/CenterSnap#-faq)
 
 ## Acknowledgments
 * This code is built upon the implementation from [SimNet](https://github.com/ToyotaResearchInstitute/simnet)

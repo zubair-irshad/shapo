@@ -79,7 +79,7 @@ class OBBOutput:
     else:
       if not self.is_numpy:
         self.convert_to_numpy_from_torch()
-      shape_embs, appearance_embs, img, scores, indices = compute_shape_pose_and_appearance(np.copy(self.heatmap[0]), np.copy(self.shape_emb[0]), np.copy(self.appearance_emb[0]),  np.copy(self.abs_pose_field[0]), min_confidence)
+      shape_embs, appearance_embs, abs_pose_outputs, img, scores, indices = compute_shape_pose_and_appearance(np.copy(self.heatmap[0]), np.copy(self.shape_emb[0]), np.copy(self.appearance_emb[0]),  np.copy(self.abs_pose_field[0]), min_confidence)
     return shape_embs, appearance_embs, abs_pose_outputs, img, scores, indices
 
   def compute_loss(self, obb_targets, log, prefix):
@@ -130,7 +130,7 @@ def compute_shape_appearance_embeddings(heatmap_output, shape_emb_output, appear
   #peaks_image = None
   peaks_image = pose_outputs.draw_peaks(np.copy(heatmap_output), np.copy(peaks))
   shape_embs, appearance_embs, indices, scores = pose_outputs.extract_latent_emb_from_peaks(
-      np.copy(heatmap_output), np.copy(peaks), np.copy(latent_emb_output)
+      np.copy(heatmap_output), np.copy(peaks), np.copy(shape_emb_output), np.copy(appearance_emb_output)
   )
   return shape_embs, appearance_embs, peaks, peaks_image,scores, indices
 

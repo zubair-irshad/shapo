@@ -16,8 +16,8 @@ from simnet.lib.net.models.auto_encoder import PointCloudAE
 from utils.nocs_utils import load_img_NOCS, create_input_norm, nms, get_masks_out, get_aligned_masks_segout, get_masked_textured_pointclouds
 from utils.viz_utils import depth2inv, viz_inv_depth
 from utils.transform_utils import transform_coordinates_3d, calculate_2d_projections
-from utils.transform_utils import project, get_absposes
-from utils.viz_utils import save_projected_points, draw_bboxes, draw_bboxes_mpl_glow
+from utils.transform_utils import project, get_pc_absposes, transform_pcd_to_canonical
+from utils.viz_utils import save_projected_points, draw_bboxes_mpl_glow
 from sdf_latent_codes.get_surface_pointcloud import get_surface_pointclouds_octgrid_viz, get_surface_pointclouds
 from sdf_latent_codes.get_rgb import get_rgbnet, get_rgb_from_rgbnet
 
@@ -53,15 +53,27 @@ def inference(
     with torch.no_grad():
       seg_output, _, _ , pose_output = model.forward(input)
       shape_emb_outputs, appearance_emb_outputs, abs_pose_outputs, img_output, scores_out, output_indices = pose_output.compute_shape_pose_and_appearance(min_confidence,is_target = False)
-      shape_emb_outputs, appearance_emb_outputs, abs_pose_outputs, scores_out, output_indices = nms(
-        shape_emb_outputs, appearance_emb_outputs, abs_pose_outputs, scores_out, output_indices, _CAMERA
-        )
+      #shape_emb_outputs, appearance_emb_outputs, abs_pose_outputs, scores_out, output_indices = nms(
+      #  shape_emb_outputs, appearance_emb_outputs, abs_pose_outputs, scores_out, output_indices, _CAMERA
+      #  )
 
     # get masks and masked pointclouds of each object in the image
     depth_ = np.array(depth, dtype=np.float32)*255.0
+    seg_output.convert_to_numpy_from_torch()
     masks_out = get_masks_out(seg_output, depth_)
     masks_out = get_aligned_masks_segout(masks_out, output_indices, depth_)
     masked_pointclouds, areas, masked_rgb = get_masked_textured_pointclouds(masks_out, depth_, left_linear[:,:,::-1], camera = _CAMERA)
+
+    # for i, (pose, pc) in enumerate(zip(abs_pose_outputs, masked_pointclouds)):
+    #     print("pc", pc.shape)
+    #     pose = pose.camera_T_object @ (pose.scale_matrix)
+    #     pc = transform_pcd_to_canonical(pose, pc)
+    #     pcd = o3d.geometry.PointCloud()
+    #     pcd.points = o3d.utility.Vector3dVector(np.copy(pc))
+    #     mesh = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.3)
+    #     o3d.visualization.draw_geometries([pcd, mesh])
+    #     filename = 'masked_depth_pcd_' + str(i)+'.pcd'
+    #     o3d.io.write_point_cloud(filename, pcd)
 
     cv2.imwrite(
         str(output_path / f'{i}_image.png'),
@@ -92,16 +104,16 @@ def inference(
         appearance_emb = appearance_emb_outputs[j]
         is_oct_grid = True
         if is_oct_grid:
-            pcd_dsdf, nrm_dsdf = get_surface_pointclouds_octgrid_viz(shape_emb, lod=lod, sdf_pretrained_dir=sdf_pretrained_dir)
+            # pcd_dsdf_actual = get_surface_pointclouds_octgrid_sparse(shape_emb, sdf_latent_code_dir = sdf_pretrained_dir, lods=[2,3,4,5,6])
+            pcd_dsdf, nrm_dsdf = get_surface_pointclouds_octgrid_viz(shape_emb, lod=lod, sdf_latent_code_dir=sdf_pretrained_dir)
         else:
             pcd_dsdf = get_surface_pointclouds(shape_emb)
-
         rgbnet = get_rgbnet(rgb_model_dir)
         pred_rgb = get_rgb_from_rgbnet(shape_emb, pcd_dsdf, appearance_emb, rgbnet)
-        rotated_pc, rotated_box, _ = get_absposes(abs_pose_outputs[j], pcd_dsdf, camera_model = _CAMERA)
+        rotated_pc, rotated_box, _ = get_pc_absposes(abs_pose_outputs[j], pcd_dsdf)
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(np.copy(rotated_pc))
-        pcd.colors = o3d.utility.Vector3dVector(pred_rgb)
+        pcd.colors = o3d.utility.Vector3dVector(pred_rgb.detach().cpu().numpy())
         pcd.normals = o3d.utility.Vector3dVector(nrm_dsdf)
         rotated_pcds.append(pcd)
         points_mesh = camera.convert_points_to_homopoints(rotated_pc.T)
@@ -113,8 +125,9 @@ def inference(
         sRT = abs_pose_outputs[j].camera_T_object @ abs_pose_outputs[j].scale_matrix
         transformed_axes = transform_coordinates_3d(xyz_axis, sRT)
         axes.append(calculate_2d_projections(transformed_axes, _CAMERA.K_matrix[:3,:3]))
-        
-    save_projected_points(img_vis, points_2d, str(output_path), str(output_path), i)
+
+    #o3d.visualization.draw_geometries(rotated_pcds)
+    #save_projected_points(img_vis, points_2d, str(output_path), i)
     colors_box = [(234, 237, 63)]
     colors_mpl = ['#08F7FE']
     im = np.array(np.copy(img_vis)).copy()
@@ -136,14 +149,14 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
   common.add_train_args(parser)
   app_group = parser.add_argument_group('app')
-  app_group.add_argument('--app_output', default='inference_best', type=str)
-  app_group.add_argument('--result_name', default='centersnap_nocs', type=str)
+  app_group.add_argument('--app_output', default='inference', type=str)
+  app_group.add_argument('--result_name', default='ShAPO_Real', type=str)
   app_group.add_argument('--data_dir', default='nocs_data', type=str)
 
   hparams = parser.parse_args()
   print(hparams)
   result_name = hparams.result_name
-  path = 'data/'+result_name
+  path = 'results/'+result_name
   output_path = pathlib.Path(path) / hparams.app_output
   output_path.mkdir(parents=True, exist_ok=True)
   inference(hparams, hparams.data_dir, output_path)

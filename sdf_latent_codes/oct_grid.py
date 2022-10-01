@@ -17,15 +17,11 @@ def get_grid_surface_hook(feat_sdf, lods, octgrid, sdfnet):
     with torch.no_grad():
         xyz_0 = np.array(octgrid.centers)[np.array(octgrid.level) == lods[0]]
         xyz = torch.from_numpy(xyz_0).to(feat_sdf.device)
-        # pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pred['xyz'].cpu().detach().numpy()))
-        # o3d.visualization.draw_geometries([pcd])
         for lod in lods:
             inputs_sdfnet = torch.cat([feat_sdf.expand(xyz.shape[0], -1), xyz], 1).to(feat_sdf.device, feat_sdf.dtype)
             sdf = sdfnet(inputs_sdfnet)
             occ = sdf.abs() < get_cell_size(lod)
             xyz = subdivide(xyz[occ[:, 0]], level=lod)
-            # pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pred['xyz'].cpu().detach().numpy()))
-            # o3d.visualization.draw_geometries([pcd])
     points = Variable(xyz.to(feat_sdf.device, feat_sdf.dtype), requires_grad=True)
     points.register_hook(save_grad('grid_points'))
     return points
@@ -332,7 +328,9 @@ class OctGrid:
         # Keep only SDF points close to the surface
         surface_mask = sdf.abs() < threshold
         points_masked = points.masked_select(surface_mask).view(-1, 3)
-        return points_masked.to(sdf.to(sdf.dtype))
+        normals_masked = normals.masked_select(surface_mask).view(-1, 3)
+        points_masked_normed = (points_masked + 1) / 2
+        return points_masked.to(sdf.to(sdf.dtype)), normals_masked.to(sdf.to(sdf.dtype))
 
     def get_surface_points_given(self, sdf, pcd, threshold=0.03, graph=True):
         """
@@ -345,12 +343,6 @@ class OctGrid:
         Returns: projected points (N,3), NOCS (N,3), normals (N,3)
 
         """
-        # Get Jacobian / normals: backprop to vertices to get a jacobian
-        # sdf.sum().backward(retain_graph=True)
-        # normals = F.normalize(grads['grid_points'][:, :], dim=-1)
-
-        # normals_single, = torch.autograd.grad(sdf.sum(), points_orig, create_graph=True)[0][:, :, -3:]
-        # normals_single, = torch.autograd.grad(sdf.sum(), pcd, create_graph=graph)
         normals_single, = torch.autograd.grad(sdf.sum(), pcd, retain_graph=True)
         normals = F.normalize(normals_single, dim=-1).detach()
         # normals_single_normed[normals_single_normed != normals_single_normed] = 0
@@ -360,7 +352,9 @@ class OctGrid:
         # Keep only SDF points close to the surface
         surface_mask = sdf.abs() < threshold
         points_masked = points.masked_select(surface_mask).view(-1, 3)
-        return points_masked.to(sdf.to(sdf.dtype))
+        normals_masked = normals.masked_select(surface_mask).view(-1, 3)
+        points_masked_normed = (points_masked + 1) / 2
+        return points_masked.to(sdf.to(sdf.dtype)), normals_masked.to(sdf.to(sdf.dtype))
 
     def get_surface_points_sparse(self, sdf, pcd, threshold=0.02, graph=True):
         """
@@ -446,23 +440,10 @@ def get_grid_surface(feat_sdf, lods, octgrid, sdfnet):
     with torch.no_grad():
         xyz_0 = np.array(octgrid.centers)[np.array(octgrid.level) == lods[0]]
         xyz = torch.from_numpy(xyz_0).to(feat_sdf.device)
-        
-        # pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pred['xyz'].cpu().detach().numpy()))
-        # o3d.visualization.draw_geometries([pcd])
         for lod in lods:
             inputs_sdfnet = torch.cat([feat_sdf.expand(xyz.shape[0], -1), xyz], 1).to(feat_sdf.device, feat_sdf.dtype)
             sdf = sdfnet(inputs_sdfnet)
             occ = sdf.abs() < get_cell_size(lod)
             xyz = subdivide(xyz[occ[:, 0]], level=lod)
-            # pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pred['xyz'].cpu().detach().numpy()))
-            # o3d.visualization.draw_geometries([pcd])
     points = Variable(xyz.to(feat_sdf.device, feat_sdf.dtype), requires_grad=True)
     return points
-
-
-# # Store grads for normals
-# grads = {}
-# def save_grad(name):
-#     def hook(grad):
-#         grads[name] = grad
-#     return hook

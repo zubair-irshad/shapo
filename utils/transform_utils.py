@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from simnet.lib import camera
+from simnet.lib import camera, transform
 import torch
 
 def align_rotation(R):
@@ -184,7 +184,7 @@ def symmetric_orthogonalization(x):
   r = torch.matmul(u, vt)
   return r
 
-def get_absposes(pose, pc, sizes = None
+def get_pc_absposes(pose, pc, sizes = None
 ):
   if sizes is not None:
     pc_homopoints = camera.convert_points_to_homopoints(pc.T)
@@ -211,3 +211,105 @@ def get_absposes(pose, pc, sizes = None
     morphed_box_homopoints = pose.camera_T_object @ unit_box_homopoints
     morphed_box_points = camera.convert_homopoints_to_points(morphed_box_homopoints).T
   return morphed_pc_homopoints, morphed_box_points, size
+
+
+def transform_pcd_to_canonical(pose, pc
+):
+    # Create constant tensor to store 3D model coordinates
+    ones = torch.ones(pc[:, :1].shape).to(pc.device)
+    coords_3d_h = torch.cat([pc, ones], dim=-1)  # n_vertices, 4
+    coords_3d_h = coords_3d_h.T # 4, n_vertices
+    coords_projected_3d = (torch.inverse(pose) @ coords_3d_h).T
+    return coords_projected_3d[:,:3]
+
+def get_abs_pose_vector_from_matrix(RT_matrix, scale_matrix, add_noise, noise_params=None):
+    if add_noise:
+      psi, theta, phi, t = noise_params
+      RT_matrix = add_noise_pose(RT_matrix, psi, theta, phi, t)
+    scale = scale_matrix[0,0]
+    RT_vector = np.zeros(12)
+    RT_vector[:9] = RT_matrix[:3, :3].reshape(9)
+    RT_vector[9:] = RT_matrix[:3, 3]
+    return RT_vector, scale
+
+rot_psi = lambda phi: np.array([
+        [1, 0, 0, 0],
+        [0, np.cos(phi), -np.sin(phi), 0],
+        [0, np.sin(phi), np.cos(phi), 0],
+        [0, 0, 0, 1]])
+
+rot_theta = lambda th: np.array([
+        [np.cos(th), 0, -np.sin(th), 0],
+        [0, 1, 0, 0],
+        [np.sin(th), 0, np.cos(th), 0],
+        [0, 0, 0, 1]])
+
+rot_phi = lambda psi: np.array([
+        [np.cos(psi), -np.sin(psi), 0, 0],
+        [np.sin(psi), np.cos(psi), 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]])
+
+trans_t = lambda t: np.array([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, t],
+        [0, 0, 0, 1]])
+
+def add_noise_pose(RT, psi, theta, phi, t):
+    start_pose =  trans_t(t) @ rot_phi(phi/180.*np.pi) @ rot_theta(theta/180.*np.pi) @ rot_psi(psi/180.*np.pi)  @ RT
+    return start_pose
+
+def get_abs_pose_from_vector(abs_pose_value, scale):
+    rotation_matrix = np.array([[abs_pose_value[0], abs_pose_value[1], abs_pose_value[2]],
+                                [abs_pose_value[3], abs_pose_value[4], abs_pose_value[5]],
+                                [abs_pose_value[6], abs_pose_value[7], abs_pose_value[8]]])
+    translation_vector = np.array([abs_pose_value[9], abs_pose_value[10], abs_pose_value[11]])
+    transformation_mat = np.eye(4)
+    transformation_mat[:3,:3] = rotation_matrix
+    transformation_mat[:3,3] = translation_vector
+    scale_matrix = np.eye(4)
+    scale_mat = scale*np.eye(3, dtype=float)
+    scale_matrix[0:3, 0:3] = scale_mat
+    abs_pose = transform.Pose(camera_T_object=transformation_mat, scale_matrix=scale_matrix)
+    return abs_pose
+
+def get_abs_pose_matrix_from_vectors(abs_pose_values, scales):
+    abs_poses = []
+    for abs_pose_value, scale in zip(abs_pose_values, scales):
+        rotation_matrix = np.array([[abs_pose_value[0], abs_pose_value[1], abs_pose_value[2]],
+                                    [abs_pose_value[3], abs_pose_value[4], abs_pose_value[5]],
+                                    [abs_pose_value[6], abs_pose_value[7], abs_pose_value[8]]])
+        translation_vector = np.array([abs_pose_value[9], abs_pose_value[10], abs_pose_value[11]])
+        transformation_mat = np.eye(4)
+        transformation_mat[:3,:3] = rotation_matrix
+        transformation_mat[:3,3] = translation_vector
+        scale_matrix = np.eye(4)
+        scale_mat = scale*np.eye(3, dtype=float)
+        scale_matrix[0:3, 0:3] = scale_mat
+        scales.append(scale_matrix)
+        abs_poses.append(transform.Pose(
+                camera_T_object=transformation_mat, scale_matrix=scale_matrix
+            ))
+    return abs_poses
+
+def get_abs_pose_from_RTs(RT, scale, device):
+    rotation_matrix = RT[:9].view(3,3)
+    translation_vector = RT[9:]
+    transformation_mat = torch.eye(4).to(device)
+    transformation_mat[:3,:3] = rotation_matrix
+    transformation_mat[:3,3] = translation_vector
+    scale_matrix = torch.eye(4).to(device)
+    scale_mat = scale * torch.eye(3).to(device)
+    scale_matrix[0:3, 0:3] = scale_mat
+    transformation_mat = transformation_mat @ scale_matrix
+    return transformation_mat
+
+def transform_pcd_tensor(pose, pc, device
+):
+    # Create constant tensor to store 3D model coordinates
+    ones = torch.ones(pc[:, :1].shape).to(device, pc.dtype)
+    coords_3d_h = torch.cat([pc, ones], dim=-1)  # n_vertices, 4
+    coords_3d_h = coords_3d_h.t()  # 4, n_vertices
+    coords_projected_3d = (pose @ coords_3d_h).t()[:,:3]
+    return coords_projected_3d

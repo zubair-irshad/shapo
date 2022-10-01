@@ -1,6 +1,6 @@
 import numpy as np
 import torch.nn as nn
-
+import torch
 from simnet.lib.net.models.panoptic_backbone import SemSegFPNHead, PoseFPNHead, ShapeSpec, output_shape, build_resnet_fpn_backbone
 from simnet.lib.net.models.basic_stem import RGBDStem
 from simnet.lib.net.post_processing import segmentation_outputs
@@ -159,7 +159,8 @@ class PanopticNet(nn.Module):
   def __init__(self, hparams):
     super().__init__()
     self.hparams = hparams
-    input_shape = ShapeSpec(channels=3, height=512, width=640)
+    input_shape = ShapeSpec(channels=3, height=480, width=640)
+    print("input_shape", input_shape)
     stereo_stem = RGBDStem(hparams)
     self.backbone = build_resnet_fpn_backbone(
         input_shape,
@@ -177,6 +178,7 @@ class PanopticNet(nn.Module):
     self.keypoint_head = KeypointHead(shape, hparams)
 
 
+  # this works with different shapes too i.e. 640by480 and 480by640
   def forward(self, image):
     #fine tune only
     # self.backbone.eval()

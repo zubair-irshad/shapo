@@ -23,18 +23,18 @@ import json
 def create_img_list(data_dir):
     """ Create train/val/test data list for CAMERA and Real. """
     # CAMERA dataset
-    # for subset in ['train', 'val']:
-    #     img_list = []
-    #     img_dir = os.path.join(data_dir, 'CAMERA', subset)
-    #     folder_list = [name for name in os.listdir(img_dir) if os.path.isdir(os.path.join(img_dir, name))]
-    #     for i in range(10*len(folder_list)):
-    #         folder_id = int(i) // 10
-    #         img_id = int(i) % 10
-    #         img_path = os.path.join(subset, '{:05d}'.format(folder_id), '{:04d}'.format(img_id))
-    #         img_list.append(img_path)
-    #     with open(os.path.join(data_dir, 'CAMERA', subset+'_list_all.txt'), 'w') as f:
-    #         for img_path in img_list:
-    #             f.write("%s\n" % img_path)
+    for subset in ['train', 'val']:
+        img_list = []
+        img_dir = os.path.join(data_dir, 'CAMERA', subset)
+        folder_list = [name for name in os.listdir(img_dir) if os.path.isdir(os.path.join(img_dir, name))]
+        for i in range(10*len(folder_list)):
+            folder_id = int(i) // 10
+            img_id = int(i) % 10
+            img_path = os.path.join(subset, '{:05d}'.format(folder_id), '{:04d}'.format(img_id))
+            img_list.append(img_path)
+        with open(os.path.join(data_dir, 'CAMERA', subset+'_list_all.txt'), 'w') as f:
+            for img_path in img_list:
+                f.write("%s\n" % img_path)
     # Real dataset
     for subset in ['train', 'test']:
         img_list = []
@@ -242,7 +242,7 @@ def annotate_camera_train(data_dir, start, end):
         stereo_datapoint = datapoint.Stereo(left_color=color_img, right_color=noisy_depth)
         panoptic_datapoint = datapoint.Panoptic(
         stereo=stereo_datapoint,
-        depth=noisy_depth,
+        depth=depth_array,
         segmentation=seg_mask,
         object_poses=[obb_datapoint],
         boxes=[],
