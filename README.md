@@ -141,25 +141,35 @@ Also note that this part of the code is similar to [CenterSnap](https://github.c
  
 3. Inference on a NOCS Real Test Subset
 
-<p align="center">
-<img src="demo/reconstruction.gif" width="100%">
-</p>
-
-Download a small NOCS Real subset from [[here](https://www.dropbox.com/s/yfenvre5fhx3oda/nocs_test_subset.tar.gz?dl=1)]
-
-```bash
-./runner.sh inference/inference_real.py @configs/net_config.txt --data_dir path_to_nocs_test_subset --checkpoint checkpoint_path_here
+Download a small Real test subset from [[here](https://www.dropbox.com/s/cvqyhr67zpxyq36/test_subset.tar.xz?dl=1)] and our shape and texture pretrained checkpoints from [[here]](https://www.dropbox.com/s/9190cedcvo0d10v/sdf_pretrained.tar.gz?dl=1).
+Unzip and organize these files in $ShAPO_Repo/data as follows:
+```
+test_data
+├── Real
+│   ├── test
+└── sdf_rgb_pretrained
+    ├── LatentCodes
+    ├── LatentCodes
+    ├── Reconstructions
+    ├── ModelParameters
+    ├── OptimizerParameters
+    └── rgb_latent
 ```
 
+Now run the inference script to visualize the single-shot predictions as follows:
 ```
-./runner.sh inference/inference_real.py @configs/net_config.txt --data_dir /home/zubair/shapo/nocs_test_subset/ --checkpoint /home/zubair/shapo/ckpt/epoch_25.ckpt 
+bash
+./runner.sh inference/inference_real.py @configs/net_config.txt --test_data_dir path_to_nocs_test_subset --checkpoint checkpoint_path_here
 ```
+
 You should see the **visualizations** saved in ```results/ShAPO_real```. Change the --ouput_path in *config.txt to save them to a different folder
 
 4. Optimization 
 
+This is the core optimization script to update latent shape and appearance codes along with 6D pose and sizes to better the fit the unseen single-view RGB-D observation. For a quick run of the core optimization loop along with visualization, see this [notebook](linktonotebook) here
+
 ```bash
-./runner.sh opt/optimize.py @configs/net_config.txt --data_dir /path/to/nocs_test_subset/ --checkpoint checkpoint_path_here
+./runner.sh opt/optimize.py @configs/net_config.txt --data_dir /path/to/test_data_dir/ --checkpoint checkpoint_path_here
 ```
 
 ## 📝 FAQ
