@@ -5,7 +5,7 @@ import pathlib
 import pickle
 import shortuuid
 import urllib3
-import boto3
+# import boto3
 import numpy as np
 import zstandard as zstd
 
