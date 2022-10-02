@@ -9,6 +9,7 @@ tqdm
 wandb
 plotly
 siren-pytorch==0.0.4
+zstandard==0.15.2
 colour
 configparser
 decorator
