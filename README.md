@@ -15,11 +15,11 @@ European Conference on Computer Vision (ECCV), 2022<br>
 [![Explore CenterSnap in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/zubair-irshad/CenterSnap/blob/master/notebook/explore_CenterSnap.ipynb)<br>
 
 <p align="center">
-<img src="demo/mesh_models.gif" width="100%">
+<img src="demo/mesh_models.png" width="100%">
 </p>
 
 <p align="center">
-<img src="demo/ShAPO_teaser.gif" width="100%">
+<img src="demo/architecture.jpg" width="100%">
 </p>
 
 ## Citation
@@ -127,7 +127,7 @@ python prepare_data/distributed_generate_data.py --data_dir /home/ubuntu/shapopl
 ShAPO is a two-stage process; First, a single-shot network to predict 3D shape, pose and size codes along with segmentation masks in a per-pixel manner. Second, test-time optimization of joint shape, pose and size codes given a single-view RGB-D observation of a new instance.
 
 <p align="center">
-<img src="demo/architecture.jpg" width="100%">
+<img src="demo/ShAPO_teaser.gif" width="100%">
 </p>
 
 1. Train on NOCS Synthetic (requires 13GB GPU memory):
@@ -145,7 +145,7 @@ Also note that this part of the code is similar to [CenterSnap](https://github.c
  
 3. Inference on a NOCS Real Test Subset
 
-Download a small Real test subset from [[here](https://www.dropbox.com/s/cvqyhr67zpxyq36/test_subset.tar.xz?dl=1)] and our shape and texture pretrained checkpoints from [[here]](https://www.dropbox.com/s/9190cedcvo0d10v/sdf_pretrained.tar.gz?dl=1).
+Download a small Real test subset from [[here](https://www.dropbox.com/s/cvqyhr67zpxyq36/test_subset.tar.xz?dl=1)] and our shape and texture pretrained checkpoints from [[here]](https://www.dropbox.com/s/gp3ioxiqfwerl9g/sdf_rgb_pretrained.tar.gz?dl=1).
 Unzip and organize these files in $ShAPO_Repo/data as follows:
 ```
 test_data
