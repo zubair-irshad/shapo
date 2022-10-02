@@ -115,7 +115,9 @@ Create image lists
 ```
 ./runner.sh prepare_data/generate_training_data.py --data_dir /home/ubuntu/shapo/data/nocs_data/
 ```
-Now run distributed script to collect data locally in aorund an hour
+Now run distributed script to collect data locally in a few hours. The data would be saved under `data/NOCS_data`. 
+
+**Note**: The script uses multi-gpu and runs 8 workers per gpu on a 16GB GPU. Change `worker_per_gpu` variable depending on your GPU size. 
 ```
 python prepare_data/distributed_generate_data.py --data_dir /home/ubuntu/shapoplusplus/data/nocs_data --type camera_train
 
@@ -145,12 +147,14 @@ Also note that this part of the code is similar to [CenterSnap](https://github.c
  
 3. Inference on a NOCS Real Test Subset
 
-Download a small Real test subset from [[here](https://www.dropbox.com/s/cvqyhr67zpxyq36/test_subset.tar.xz?dl=1)] and our shape and texture pretrained checkpoints from [[here]](https://www.dropbox.com/s/gp3ioxiqfwerl9g/sdf_rgb_pretrained.tar.gz?dl=1).
+Download a small Real test subset from [[here](https://www.dropbox.com/s/929kz7zuxw8jajy/sdf_rgb_pretrained.tar.xz?dl=1)],our shape and texture pretrained checkpoints from [[here]](https://www.dropbox.com/s/gp3ioxiqfwerl9g/sdf_rgb_pretrained.tar.gz?dl=1) and shapo pretrained checkpoints on real dataset [here](https://www.dropbox.com/s/nrsl67ir6fml9ro/ckpts.tar.xz?dl=1).
 Unzip and organize these files in $ShAPO_Repo/data as follows:
 ```
 test_data
 ├── Real
 │   ├── test
+|   ckpts
+
 └── sdf_rgb_pretrained
     ├── LatentCodes
     ├── LatentCodes
