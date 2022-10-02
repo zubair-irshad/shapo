@@ -185,7 +185,7 @@ This is the core optimization script to update latent shape and appearance codes
 Please see FAQs from CenterSnap [here](https://github.com/zubair-irshad/CenterSnap#-faq)
 
 ## Acknowledgments
-* This code is built upon the implementation from [SimNet](https://github.com/ToyotaResearchInstitute/simnet)
+* This code is built upon the implementation from [CenterSnap](https://github.com/zubair-irshad/CenterSnap)
 
 ## Related Work
 * [CenterSnap: Single-Shot Multi-Object 3D Shape Reconstruction and Categorical 6D Pose and Size Estimation, ICRA, 2022](https://zubair-irshad.github.io/projects/CenterSnap.html)

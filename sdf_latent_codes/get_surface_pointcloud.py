@@ -41,6 +41,24 @@ def get_surface_pointclouds(latent_vector, sdf_latent_code_dir):
     pcd_dsdf = grid_3d.get_surface_points_given(pred_sdf_grid)
     return pcd_dsdf.detach().cpu().numpy()
 
+def get_sdfnet(sdf_latent_code_dir):
+    specs_filename = os.path.join(sdf_latent_code_dir, 'specs.json')
+    model_params_subdir = "ModelParameters"
+    checkpoint = "2000"
+    specs = json.load(open(specs_filename))
+    latent_size = 64
+    decoder = Decoder(latent_size, **specs["NetworkSpecs"])
+
+    decoder = torch.nn.DataParallel(decoder)
+
+    saved_model_state = torch.load(
+        os.path.join(sdf_latent_code_dir, model_params_subdir, checkpoint + ".pth")
+    )
+    decoder.load_state_dict(saved_model_state["model_state_dict"])
+    decoder = decoder.module.cuda()
+    decoder.eval()
+    return decoder
+
 # # Function to get surface grid points
 def get_grid_surface_octgrid(feat_sdf, lods, octgrid, sdfnet):
     with torch.no_grad():
