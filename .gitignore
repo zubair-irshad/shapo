@@ -6,4 +6,5 @@ wandb/*
 results/*
 test_data/*
 ckpts/*
+.ipynb_checkpoints
 
