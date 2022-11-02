@@ -22,8 +22,6 @@ European Conference on Computer Vision (ECCV), 2022<br>
 <img src="demo/architecture.jpg" width="100%">
 </p>
 
-## Code Coming Soon!
-
 ## Citation
 
 If you find this repository useful, please consider citing:
