@@ -195,4 +195,4 @@ Please see FAQs from CenterSnap [here](https://github.com/zubair-irshad/CenterSn
 </p>
 
 ## Licenses
-* The source code is released under the [MIT license](https://opensource.org/licenses/MIT).
+* This repository is released under the [CC BY-NC 4.0](https://github.com/zubair-irshad/shapo/blob/master/LICENSE.md) license.
