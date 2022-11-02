@@ -141,7 +141,7 @@ def extract_latent_emb_from_peaks(heatmap_output, peaks, shape_emb_output, appea
     index = index.astype(np.int)
     
     shape_emb = shape_emb_output[index[0], index[1], :]
-    shape_embeddings.append(latent_emb)
+    shape_embeddings.append(shape_emb)
 
     appearance_emb = appearance_emb_output[index[0], index[1], :]
     appearance_embeddings.append(appearance_emb)

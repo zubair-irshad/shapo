@@ -67,6 +67,7 @@ if __name__ == "__main__":
   print('Actual steps:', actual_steps)
   print('Epochs:', epochs)
   output_path = pathlib.Path(hparams.output) / hparams.exp_name
+  output_path.mkdir(parents=True, exist_ok=True)
   model = PanopticModel(hparams, epochs, train_ds, EvalMethod())
   model_checkpoint = ModelCheckpoint(filepath=output_path, save_top_k=-1, period=1, mode='max')
   wandb_logger = loggers.WandbLogger(name=hparams.wandb_name, project='ShAPO')

@@ -9,7 +9,7 @@ Download [camera_train](http://download.cs.stanford.edu/orion/nocs/camera_train.
 [real_train](http://download.cs.stanford.edu/orion/nocs/real_train.zip), [real_test](http://download.cs.stanford.edu/orion/nocs/real_test.zip),
 [ground-truth annotations](http://download.cs.stanford.edu/orion/nocs/gts.zip),
 [camera_composed_depth](http://download.cs.stanford.edu/orion/nocs/camera_composed_depth.zip), [mesh models](http://download.cs.stanford.edu/orion/nocs/obj_models.zip) and [eval_results](https://drive.google.com/file/d/1p72NdY4Bie_sra9U8zoUNI4fTrQZdbnc/view?usp=sharing)provided by [NOCS](https://github.com/hughw19/NOCS_CVPR2019) and [nocs preprocess data](https://www.dropbox.com/s/8im9fzopo71h6yw/nocs_preprocess.tar.gz?dl=1).<br/>
-Also download [sdf_rgb_pretrained_weights](https://www.dropbox.com/s/9190cedcvo0d10v/sdf_pretrained.tar.gz?dl=1). 
+Also download [sdf_rgb_pretrained_weights](https://www.dropbox.com/s/929kz7zuxw8jajy/sdf_rgb_pretrained.tar.xz?dl=1). 
 Unzip and organize these files in $ShAPO_Repo/data as follows:
 ```
 data

@@ -23,18 +23,18 @@ import json
 def create_img_list(data_dir):
     """ Create train/val/test data list for CAMERA and Real. """
     # CAMERA dataset
-    # for subset in ['train', 'val']:
-    #     img_list = []
-    #     img_dir = os.path.join(data_dir, 'CAMERA', subset)
-    #     folder_list = [name for name in os.listdir(img_dir) if os.path.isdir(os.path.join(img_dir, name))]
-    #     for i in range(10*len(folder_list)):
-    #         folder_id = int(i) // 10
-    #         img_id = int(i) % 10
-    #         img_path = os.path.join(subset, '{:05d}'.format(folder_id), '{:04d}'.format(img_id))
-    #         img_list.append(img_path)
-    #     with open(os.path.join(data_dir, 'CAMERA', subset+'_list_all.txt'), 'w') as f:
-    #         for img_path in img_list:
-    #             f.write("%s\n" % img_path)
+    for subset in ['train', 'val']:
+        img_list = []
+        img_dir = os.path.join(data_dir, 'CAMERA', subset)
+        folder_list = [name for name in os.listdir(img_dir) if os.path.isdir(os.path.join(img_dir, name))]
+        for i in range(10*len(folder_list)):
+            folder_id = int(i) // 10
+            img_id = int(i) % 10
+            img_path = os.path.join(subset, '{:05d}'.format(folder_id), '{:04d}'.format(img_id))
+            img_list.append(img_path)
+        with open(os.path.join(data_dir, 'CAMERA', subset+'_list_all.txt'), 'w') as f:
+            for img_path in img_list:
+                f.write("%s\n" % img_path)
     # Real dataset
     for subset in ['train', 'test']:
         img_list = []
@@ -242,7 +242,7 @@ def annotate_camera_train(data_dir, start, end):
         stereo_datapoint = datapoint.Stereo(left_color=color_img, right_color=noisy_depth)
         panoptic_datapoint = datapoint.Panoptic(
         stereo=stereo_datapoint,
-        depth=noisy_depth,
+        depth=depth_array,
         segmentation=seg_mask,
         object_poses=[obb_datapoint],
         boxes=[],
@@ -388,17 +388,9 @@ def annotate_test_data(data_dir, source, subset, start, end):
     DATASET_DIR.mkdir(parents=True, exist_ok=True)
     _DATASET = datapoint.make_dataset(f's3://scratch-tri-global/zubair.irshad/{DATASET_DIR}/{source}/{subset}')
     #_DATASET = datapoint.make_dataset(f'file://{DATASET_DIR}/{source}/{subset}')
-    
-    _camera = camera.NOCS_Real()
-    camera_val = open(os.path.join(data_dir, 'CAMERA', 'val_list_all.txt')).read().splitlines()
-    camera_val = camera_val[start:end]
-
-    rgb_feat_rgb_only = load_rgb_latent_dict(data_dir, 'reconstructor.pt')
-    real_test = open(os.path.join(data_dir, 'Real', 'test_list_all.txt')).read().splitlines()
-    camera_intrinsics = np.array([[577.5, 0, 319.5], [0, 577.5, 239.5], [0, 0, 1]])
-    real_intrinsics = np.array([[591.0125, 0, 322.525], [0, 590.16775, 244.11084], [0, 0, 1]])
+        
     # compute model size
-    model_file_path = ['obj_models/camera_val.pkl']
+    model_file_path = ['obj_models/camera_val.pkl', 'obj_models/real_test.pkl']
     models = {}
     for path in model_file_path:
         with open(os.path.join(data_dir, path), 'rb') as f:
@@ -409,15 +401,18 @@ def annotate_test_data(data_dir, source, subset, start, end):
     # meta info for re-label mug category
     with open(os.path.join(data_dir, 'obj_models/mug_meta.pkl'), 'rb') as f:
         mug_meta = cPickle.load(f)
-
-    #TEST MODELS
-    obj_model_dir = os.path.join(data_dir, 'obj_models')
-    with open(os.path.join(obj_model_dir, 'real_test.pkl'), 'rb') as f:
-        obj_models = cPickle.load(f)
     
     if source == 'CAMERA':
+        _camera = camera.NOCS_Camera()
+        camera_val = open(os.path.join(data_dir, 'CAMERA', 'val_list_all.txt')).read().splitlines()
+        camera_val = camera_val[start:end]
+        camera_intrinsics = np.array([[577.5, 0, 319.5], [0, 577.5, 239.5], [0, 0, 1]])
         subset_meta = [('CAMERA', camera_val, camera_intrinsics, 'val')]
     else:
+        _camera = camera.NOCS_Real()
+        real_test = open(os.path.join(data_dir, 'Real', 'test_list_all.txt')).read().splitlines()
+        real_test = real_test[start:end]
+        real_intrinsics = np.array([[591.0125, 0, 322.525], [0, 590.16775, 244.11084], [0, 0, 1]])
         subset_meta = [('Real', real_test, real_intrinsics, 'test')]
     # subset_meta = [('CAMERA', camera_val, camera_intrinsics, 'val'), ('Real', real_test, real_intrinsics, 'test')]
     for source, img_list, intrinsics, subset in subset_meta:

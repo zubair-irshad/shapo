@@ -10,6 +10,13 @@ from matplotlib.cm import get_cmap
 import copy
 import colorsys
 import plotly.graph_objects as go
+from sdf_latent_codes.get_surface_pointcloud import get_surface_pointclouds, get_surface_pointclouds_octgrid_viz
+from sdf_latent_codes.get_rgb import get_rgb, get_rgb_from_rgbnet
+from utils.transform_utils import get_pc_absposes
+import time
+import os
+import trimesh
+from sdf_latent_codes.save_canonical_mesh import save_mesh
 
 def align_vector_to_another(a=np.array([0, 0, 1]), b=np.array([1, 0, 0])):
     """
@@ -271,12 +278,12 @@ def save_projected_points(color_img, pcd_array, output_path, uid):
     plt.xlim((0, color_img.shape[1]))
     plt.ylim((0, color_img.shape[0]))
     # Projections
-    color = ['g', 'y', 'b', 'r', 'm', 'c', '#3a7c00', '#3a7cd9', '#8b7cd9', '#211249']
+    color = ['g', 'y', 'b', 'r', 'm', 'c', '#3a7c00', '#3a7cd9', '#8b7cd9', '#211249', '#AB412A', '#414709', '#50B649']
     for i, points_2d_mesh in enumerate(pcd_array):
         plt.scatter(points_2d_mesh[:,0], points_2d_mesh[:,1], color=color[i], s=2)
     plt.gca().invert_yaxis()
     plt.axis('off')
-    plt.imshow(color_img[:,:,::-1])
+    plt.imshow(color_img)
     plt.savefig(output_path +'/projection'+str(uid)+'.png')
 
 def random_colors(N, bright=True):
@@ -323,6 +330,41 @@ def visualize(detections, img, classes, seg_mask, object_key_to_name, filename):
         plt.savefig(filename)
         plt.close()
 
+def draw_colored_shape(emb, abs_pose, appearance_emb, rgbnet, sdf_latent_code_dir, is_oct_grid= False):
+    if is_oct_grid:
+        lod = 8
+        pcd_dsdf, nrm_dsdf = get_surface_pointclouds_octgrid_viz(emb, lod=lod, sdf_latent_code_dir = sdf_latent_code_dir)
+    else:
+        pcd_dsdf = get_surface_pointclouds(emb)
+
+    pred_rgb = get_rgb_from_rgbnet(emb, pcd_dsdf, appearance_emb, rgbnet)
+    #pred_rgb = get_rgb(emb, pcd_dsdf, appearance_emb)
+
+    rotated_pc, rotated_box, _ = get_pc_absposes(abs_pose, pcd_dsdf)
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(np.copy(rotated_pc))
+    pcd.colors = o3d.utility.Vector3dVector(pred_rgb.detach().cpu().numpy())
+    pcd.normals = o3d.utility.Vector3dVector(nrm_dsdf)
+    return pcd
+
+def draw_colored_mesh_mcubes(emb, abs_pose, appearance_emb, rgbnet, output_path, plot_name, img_num, obj_num):
+    filename = str(output_path) + '/mesh_'+plot_name+str(img_num)+str(obj_num)
+    save_mesh(emb, filename)
+    ply_filename = filename+'.ply'
+    obj_trimesh = trimesh.load(ply_filename)
+    obj_trimesh.apply_transform(abs_pose.scale_matrix)
+    obj_trimesh.apply_transform(abs_pose.camera_T_object)
+    obj_trimesh = obj_trimesh.as_open3d
+    obj_trimesh.compute_vertex_normals()
+    # Projected textures
+    single_pcd = obj_trimesh.sample_points_uniformly(200000)
+    pred_rgb = get_rgb_from_rgbnet(emb, np.array(single_pcd.points), appearance_emb, rgbnet)
+
+    rotated_pc, rotated_box, _ = get_pc_absposes(abs_pose, np.array(single_pcd.points))
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(np.copy(rotated_pc))
+    pcd.colors = o3d.utility.Vector3dVector(np.array(pred_rgb.detach().cpu().numpy()))
+    return pcd
 
 def draw_bboxes(img, img_pts, axes, color):
     img_pts = np.int32(img_pts).reshape(-1, 2)
@@ -563,8 +605,8 @@ def draw_geometries(geometries):
             colors = None
             if geometry.has_colors():
                 colors = np.asarray(geometry.colors)
-            elif geometry.has_normals():
-                colors = (0.5, 0.5, 0.5) + np.asarray(geometry.normals) * 0.5
+            # elif geometry.has_normals():
+            #     colors = (0.5, 0.5, 0.5) + np.asarray(geometry.normals) * 0.5
             else:
                 geometry.paint_uniform_color((1.0, 0.0, 0.0))
                 colors = np.asarray(geometry.colors)
@@ -633,3 +675,73 @@ def draw_bboxes_mpl_glow(img, img_pts, axes, color):
                 alpha=alpha_value,
                 color=color_ground)
     return img
+
+def lookat(pos, target, up=np.asarray([0, 1, 0])):
+    """Compute an OpenGL-style lookat matrix
+    Args:
+        pos (np.array): Position vector of camera
+        target (np.array): Position vector of target 
+        up (np.array): Defines the up direction of the camera  
+    Returns:
+        transform (np.array): 4x4 transformation matrix    
+    """
+    pos = np.asarray(pos)
+    up = np.asarray(up)
+    F = pos - np.asarray(target)
+    f = F / np.linalg.norm(F)
+    U = up / np.linalg.norm(up)
+    s = np.cross(f, U)
+    u = np.cross(s, f)
+    M, T = np.eye(4), np.eye(4)
+    M[:3, :3] = np.vstack([s, u, -f])
+    T[:3, 3] = -pos
+    transform = M @ T
+    return transform
+
+def plot_optim_3d(viz, pcd_1, clr_1, pcd_2, clr_2, pcd_2_nrm, pose_vis, optim_foldername, e):
+    """
+    Visualize optimization in 3D
+    Args:
+        viz: Open3D visualizer object
+        pcd_1 (torch.Tensor): First point cloud (N, 3)
+        clr_1 (torch.Tensor): Colors of the first point cloud (N, 3)
+        pcd_2 (torch.Tensor): Second point cloud (N, 3)
+        clr_2 (torch.Tensor): Colors of the second point cloud (N, 3)
+        dists (np.array): Distances between the correspondence points (N)
+        idxs (np.array): Ids between the correspondence points (N)
+        interactive (bool): activate interactive visualization mode
+    """
+    
+    pcd_ren, pcd_patch = o3d.geometry.PointCloud(), o3d.geometry.PointCloud()
+    pcd_patch.points = o3d.utility.Vector3dVector(pcd_1.detach().cpu().numpy())
+    pcd_patch.colors = o3d.utility.Vector3dVector(clr_1.detach().cpu().numpy())
+    pcd_ren.points = o3d.utility.Vector3dVector(pcd_2.detach().cpu().numpy())
+    pcd_ren.colors = o3d.utility.Vector3dVector(clr_2.detach().cpu().numpy())
+    pcd_ren.normals = o3d.utility.Vector3dVector(pcd_2_nrm.detach().cpu().numpy())
+    #o3d.visualization.draw_geometries([pcd_patch, pcd_ren])
+    
+    mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.6, origin=[0, 0, 0])
+    # T = abs_pose_outputs[j].camera_T_object
+    mesh_frame = mesh_frame.transform(pose_vis)
+    # else:
+    # [viz.add_geometry(o) for o in [pcd_patch, pcd_ren, line_set]]
+    [viz.add_geometry(o) for o in [pcd_patch, pcd_ren, mesh_frame]]
+    params = o3d.camera.PinholeCameraParameters()
+    # params.intrinsic.set_intrinsics(640, 480, 591.0125, 590.16775, 322.525, 244.11084)
+    params.intrinsic.set_intrinsics(640, 480, 600, 600, 320-0.5, 240-0.5)
+    pos = np.asarray(pcd_ren.points).mean(0)
+    pos -= 0.4
+    params.extrinsic = lookat(pos=pos, target=np.asarray(pcd_ren.points).mean(0))
+    viz.get_view_control().convert_from_pinhole_camera_parameters(params)
+    # viz.get_view_control().camera_local_rotate(x=0.2, y=0.4)
+    # viz.get_view_control().change_field_of_view(30)
+    # [viz.update_geometry(o) for o in [pcd_patch, pcd_ren, line_set]]
+    [viz.update_geometry(o) for o in [pcd_patch, pcd_ren, mesh_frame]]
+    # viz.update_geometry()
+    viz.poll_events()
+    viz.update_renderer()
+    time.sleep(1)
+    optim_filename = os.path.join(optim_foldername,'colored_model'+str(e)+'.png')
+    viz.capture_screen_image(optim_filename)
+    # [viz.remove_geometry(o) for o in [pcd_patch, pcd_ren, line_set]]
+    [viz.remove_geometry(o) for o in [pcd_patch, pcd_ren, mesh_frame]]

@@ -12,10 +12,14 @@ European Conference on Computer Vision (ECCV), 2022<br>
 
 [[Project Page](https://zubair-irshad.github.io/projects/ShAPO.html)] [[arXiv](https://arxiv.org/abs/2207.13691)] [[PDF](https://arxiv.org/pdf/2207.13691.pdf)] [[Video](https://youtu.be/LMg7NDcLDcA)] [[Poster](https://zubair-irshad.github.io/projects/resources/Poster%7CCenterSnap%7CICRA2022.pdf)] 
 
-[![Explore CenterSnap in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/zubair-irshad/CenterSnap/blob/master/notebook/explore_CenterSnap.ipynb)<br>
+[![Explore CenterSnap in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/zubair-irshad/shapo/blob/master/notebook/explore_ShAPO.ipynb)<br>
 
 <p align="center">
-<img src="demo/ShAPO_teaser.gif" width="100%">
+<img src="demo/mesh_models.png" width="100%">
+</p>
+
+<p align="center">
+<img src="demo/architecture.jpg" width="100%">
 </p>
 
 ## Citation
@@ -111,7 +115,9 @@ Create image lists
 ```
 ./runner.sh prepare_data/generate_training_data.py --data_dir /home/ubuntu/shapo/data/nocs_data/
 ```
-Now run distributed script to collect data locally in aorund an hour
+Now run distributed script to collect data locally in a few hours. The data would be saved under `data/NOCS_data`. 
+
+**Note**: The script uses multi-gpu and runs 8 workers per gpu on a 16GB GPU. Change `worker_per_gpu` variable depending on your GPU size. 
 ```
 python prepare_data/distributed_generate_data.py --data_dir /home/ubuntu/shapoplusplus/data/nocs_data --type camera_train
 
@@ -121,6 +127,10 @@ python prepare_data/distributed_generate_data.py --data_dir /home/ubuntu/shapopl
 ## ✨ Training and Inference
 
 ShAPO is a two-stage process; First, a single-shot network to predict 3D shape, pose and size codes along with segmentation masks in a per-pixel manner. Second, test-time optimization of joint shape, pose and size codes given a single-view RGB-D observation of a new instance.
+
+<p align="center">
+<img src="demo/ShAPO_teaser.gif" width="100%">
+</p>
 
 1. Train on NOCS Synthetic (requires 13GB GPU memory):
 ```bash
@@ -137,68 +147,51 @@ Also note that this part of the code is similar to [CenterSnap](https://github.c
  
 3. Inference on a NOCS Real Test Subset
 
-<p align="center">
-<img src="demo/reconstruction.gif" width="100%">
-</p>
+Download a small Real test subset from [[here](https://www.dropbox.com/s/929kz7zuxw8jajy/sdf_rgb_pretrained.tar.xz?dl=1)],our shape and texture pretrained checkpoints from [[here]](https://www.dropbox.com/s/gp3ioxiqfwerl9g/sdf_rgb_pretrained.tar.gz?dl=1) and shapo pretrained checkpoints on real dataset [here](https://www.dropbox.com/s/nrsl67ir6fml9ro/ckpts.tar.xz?dl=1).
+Unzip and organize these files in $ShAPO_Repo/data as follows:
+```
+test_data
+├── Real
+│   ├── test
+|   ckpts
 
-Download a small NOCS Real subset from [[here](https://www.dropbox.com/s/yfenvre5fhx3oda/nocs_test_subset.tar.gz?dl=1)]
-
-```bash
-./runner.sh inference/inference_real.py @configs/net_config.txt --data_dir path_to_nocs_test_subset --checkpoint checkpoint_path_here
+└── sdf_rgb_pretrained
+    ├── LatentCodes
+    ├── LatentCodes
+    ├── Reconstructions
+    ├── ModelParameters
+    ├── OptimizerParameters
+    └── rgb_latent
 ```
 
-You should see the **visualizations** saved in ```results/CenterSnap```. Change the --ouput_path in *config.txt to save them to a different folder
+Now run the inference script to visualize the single-shot predictions as follows:
+```
+bash
+./runner.sh inference/inference_real.py @configs/net_config.txt --test_data_dir path_to_nocs_test_subset --checkpoint checkpoint_path_here
+```
 
-4. Optional (Shape Auto-Encoder Pre-training)
+You should see the **visualizations** saved in ```results/ShAPO_real```. Change the --ouput_path in *config.txt to save them to a different folder
 
-We provide pretrained model for shape auto-encoder to be used for data collection and inference. Although our codebase doesn't require separately training the shape auto-encoder, if you would like to do so, we provide additional scripts under **external/shape_pretraining**
+4. Optimization 
 
+This is the core optimization script to update latent shape and appearance codes along with 6D pose and sizes to better the fit the unseen single-view RGB-D observation. For a quick run of the core optimization loop along with visualization, see this [notebook](linktonotebook) here
+
+```bash
+./runner.sh opt/optimize.py @configs/net_config.txt --data_dir /path/to/test_data_dir/ --checkpoint checkpoint_path_here
+```
 
 ## 📝 FAQ
 
-**1.** I am not getting good performance on my custom camera images i.e. Realsense, OAK-D or others.
- 
-- Ans: Since the network was finetuned on the [real-world NOCS data](https://github.com/zubair-irshad/CenterSnap/edit/master/README.md#-training-and-inference) only, currently the pre-trained network gives good 3D prediction for the the following [camera setting](https://github.com/zubair-irshad/CenterSnap/blob/master/simnet/lib/camera.py#L33-L55). To get good prediction on your own camera parameters, make sure to [finetune the network](https://github.com/zubair-irshad/CenterSnap/edit/master/README.md#-training-and-inference) with your own small subset after [pre-training on the synthetic dataset](https://github.com/zubair-irshad/CenterSnap/edit/master/README.md#-training-and-inference). We provide data preparation scripts [here](https://github.com/zubair-irshad/CenterSnap/tree/master/prepare_data).
-
-
-**2.** I am getting ```no cuda GPUs available``` while running colab. 
-
-- Ans: Make sure to follow this instruction to activate GPUs in colab:
-
-```
-Make sure that you have enabled the GPU under Runtime-> Change runtime type!
-```
-
-**3.** I am getting ```raise RuntimeError('received %d items of ancdata' %
-RuntimeError: received 0 items of ancdata``` 
-
-- Ans: Increase ulimit to 2048 or 8096 via ```uimit -n 2048```
-
-**4.** I am getting ``` RuntimeError: CUDA error: no kernel image is available for execution on the device``` or ``` You requested GPUs: [0] But your machine only has: [] ``` 
-
-- Ans: Check your pytorch installation with your cuda installation. Try the following:
-
-
-1. Installing cuda 10.2 and running the same script in requirements.txt
-
-2. Installing the relevant pytorch cuda version i.e. changing this line in the requirements.txt
-
-```
-torch==1.7.1
-torchvision==0.8.2
-```
-
-**5.** I am seeing zero val metrics in ***wandb***
-- Ans: Make sure you threshold the metrics. Since pytorch lightning's first validation check metric is high, it seems like all other metrics are zero. Please threshold manually to remove the outlier metric in wandb to see actual metrics.   
+Please see FAQs from CenterSnap [here](https://github.com/zubair-irshad/CenterSnap#-faq)
 
 ## Acknowledgments
-* This code is built upon the implementation from [SimNet](https://github.com/ToyotaResearchInstitute/simnet)
+* This code is built upon the implementation from [CenterSnap](https://github.com/zubair-irshad/CenterSnap)
 
 ## Related Work
-* [ShAPO:tophat:: Implicit Representations for Multi Object Shape Appearance and Pose Optimization, ECCV, 2022](https://zubair-irshad.github.io/projects/ShAPO.html)
+* [CenterSnap: Single-Shot Multi-Object 3D Shape Reconstruction and Categorical 6D Pose and Size Estimation, ICRA, 2022](https://zubair-irshad.github.io/projects/CenterSnap.html)
 
 <p align="center">
-<img src="demo/ShAPO_teaser.gif" width="100%">
+<img src="demo/reconstruction.gif" width="100%">
 </p>
 
 ## Licenses

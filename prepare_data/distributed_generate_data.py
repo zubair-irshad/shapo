@@ -37,7 +37,7 @@ def main():
         print("start, : end", start, end)
 
         my_env = os.environ.copy()
-        my_env["CUDA_VISIBLE_DEVICES"] = str(curr_gpu+1)
+        my_env["CUDA_VISIBLE_DEVICES"] = str(curr_gpu)
         command = [
             './runner.sh', 'prepare_data/distributed_worker.py', 
             '--data_dir', str(args.data_dir), 
