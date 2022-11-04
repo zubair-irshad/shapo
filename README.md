@@ -45,11 +45,24 @@ If you find this repository useful, please consider citing:
 ```
 
 ### Contents
+ - [🤝 Google Colab](#-google-colab)
  - [💻 Environment](#-environment)
  - [📊 Dataset](#-dataset)
  - [✨ Training and Inference](#-training-and-inference)
  - [📝 FAQ (**Updated**)](#-faq)
- 
+
+## 🤝 Google Colab
+
+If you want to experiment with ShAPO, we have written a [Colab](https://colab.research.google.com/github/zubair-irshad/shapo/blob/master/notebook/explore_ShAPO.ipynb). It's quite comprehensive and easy to setup. It goes through the following experiments / ShAPO properties:
+
+- Single Shot inference
+  -  Visualize peak and depth output
+  -  Decode shape with predicted textures
+  -  Project 3D Pointclouds and 3D bounding boxes on 2D image
+- Shape, Appearance and Pose Optimization
+  -  Core optimization loop
+  -  Viusalizing optimized 3D output (i.e. textured asset creation)
+
 
 ## 💻 Environment
 
@@ -69,7 +82,7 @@ The code was built and tested on **cuda 10.2**
 Download [camera_train](http://download.cs.stanford.edu/orion/nocs/camera_train.zip), [camera_val](http://download.cs.stanford.edu/orion/nocs/camera_val25K.zip),
 [real_train](http://download.cs.stanford.edu/orion/nocs/real_train.zip), [real_test](http://download.cs.stanford.edu/orion/nocs/real_test.zip),
 [ground-truth annotations](http://download.cs.stanford.edu/orion/nocs/gts.zip),
-[camera_composed_depth](http://download.cs.stanford.edu/orion/nocs/camera_composed_depth.zip), [mesh models](http://download.cs.stanford.edu/orion/nocs/obj_models.zip) and [eval_results](https://drive.google.com/file/d/1p72NdY4Bie_sra9U8zoUNI4fTrQZdbnc/view?usp=sharing)provided by [NOCS](https://github.com/hughw19/NOCS_CVPR2019) and [nocs preprocess data](https://www.dropbox.com/s/8im9fzopo71h6yw/nocs_preprocess.tar.gz?dl=1).<br/>
+[camera_composed_depth](http://download.cs.stanford.edu/orion/nocs/camera_composed_depth.zip), [mesh models](http://download.cs.stanford.edu/orion/nocs/obj_models.zip) and [eval_results](https://drive.google.com/file/d/1p72NdY4Bie_sra9U8zoUNI4fTrQZdbnc/view?usp=sharing) provided by [NOCS](https://github.com/hughw19/NOCS_CVPR2019) and [nocs preprocess data](https://www.dropbox.com/s/8im9fzopo71h6yw/nocs_preprocess.tar.gz?dl=1).<br/>
 Also download [sdf_rgb_pretrained_weights](https://www.dropbox.com/s/9190cedcvo0d10v/sdf_pretrained.tar.gz?dl=1). 
 Unzip and organize these files in $ShAPO_Repo/data as follows:
 ```
@@ -137,7 +150,7 @@ ShAPO is a two-stage process; First, a single-shot network to predict 3D shape, 
 ./runner.sh net_train.py @configs/net_config.txt
 ```
 
-Note than *runner.sh* is equivalent to using *python* to run the script. Additionally it sets up the PYTHONPATH and CenterSnap Enviornment Path automatically. 
+Note than *runner.sh* is equivalent to using *python* to run the script. Additionally it sets up the PYTHONPATH and ShAPO Enviornment Path automatically. 
 Also note that this part of the code is similar to [CenterSnap](https://github.com/zubair-irshad/CenterSnap). We predict **implicit shapes** as SDF MLP instead of pointclouds and additionally also predict **appearance embedding** and **object masks** in this stage. 
 
 2. Finetune on NOCS Real Train (Note that good results can be obtained after finetuning on the Real train set for only a few epochs i.e. 1-5):
@@ -154,7 +167,6 @@ test_data
 ├── Real
 │   ├── test
 |   ckpts
-
 └── sdf_rgb_pretrained
     ├── LatentCodes
     ├── LatentCodes
