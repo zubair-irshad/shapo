@@ -157,10 +157,10 @@ Also note that this part of the code is similar to [CenterSnap](https://github.c
 ```bash
 ./runner.sh net_train.py @configs/net_config_real_resume.txt --checkpoint \path\to\best\checkpoint
 ```
- 
+
 3. Inference on a NOCS Real Test Subset
 
-Download a small Real test subset from [[here](https://www.dropbox.com/s/929kz7zuxw8jajy/sdf_rgb_pretrained.tar.xz?dl=1)],our shape and texture pretrained checkpoints from [[here]](https://www.dropbox.com/s/gp3ioxiqfwerl9g/sdf_rgb_pretrained.tar.gz?dl=1) and shapo pretrained checkpoints on real dataset [here](https://www.dropbox.com/s/nrsl67ir6fml9ro/ckpts.tar.xz?dl=1).
+Download a small Real test subset from [here](https://www.dropbox.com/s/cvqyhr67zpxyq36/test_subset.tar.xz?dl=1), our shape and texture decoder pretrained checkpoints from [here](https://www.dropbox.com/s/929kz7zuxw8jajy/sdf_rgb_pretrained.tar.xz?dl=1) and shapo pretrained checkpoints on real dataset [here](https://www.dropbox.com/s/nrsl67ir6fml9ro/ckpts.tar.xz?dl=1).
 Unzip and organize these files in $ShAPO_Repo/data as follows:
 ```
 test_data
