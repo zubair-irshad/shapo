@@ -150,8 +150,8 @@ def annotate_camera_train(data_dir, start, end):
     DATASET_NAME = 'ShAPO_Data'
     DATASET_DIR = pathlib.Path(f'data/{DATASET_NAME}')
     DATASET_DIR.mkdir(parents=True, exist_ok=True)
-    _DATASET = datapoint.make_dataset(f's3://scratch-tri-global/zubair.irshad/{DATASET_DIR}/CAMERA/train')
-    #_DATASET = datapoint.make_dataset(f'file://{DATASET_DIR}/CAMERA/train')
+    # _DATASET = datapoint.make_dataset(f's3://scratch-tri-global/zubair.irshad/{DATASET_DIR}/CAMERA/train')
+    _DATASET = datapoint.make_dataset(f'file://{DATASET_DIR}/CAMERA/train')
 
     _camera = camera.NOCS_Camera()
     """ Generate gt labels for CAMERA train data. """
@@ -256,8 +256,8 @@ def annotate_real_train(data_dir, start, end):
     DATASET_NAME = 'ShAPO_Data'
     DATASET_DIR = pathlib.Path(f'data/{DATASET_NAME}')
     DATASET_DIR.mkdir(parents=True, exist_ok=True)
-    _DATASET = datapoint.make_dataset(f's3://scratch-tri-global/zubair.irshad/{DATASET_DIR}/Real/train')
-    #_DATASET = datapoint.make_dataset(f'file://{DATASET_DIR}/Real/train')
+    # _DATASET = datapoint.make_dataset(f's3://scratch-tri-global/zubair.irshad/{DATASET_DIR}/Real/train')
+    _DATASET = datapoint.make_dataset(f'file://{DATASET_DIR}/Real/train')
 
 
     """ Generate gt labels for Real train data through PnP. """
@@ -386,8 +386,8 @@ def annotate_test_data(data_dir, source, subset, start, end):
     DATASET_NAME = 'ShAPO_Data'
     DATASET_DIR = pathlib.Path(f'data/{DATASET_NAME}')
     DATASET_DIR.mkdir(parents=True, exist_ok=True)
-    _DATASET = datapoint.make_dataset(f's3://scratch-tri-global/zubair.irshad/{DATASET_DIR}/{source}/{subset}')
-    #_DATASET = datapoint.make_dataset(f'file://{DATASET_DIR}/{source}/{subset}')
+    # _DATASET = datapoint.make_dataset(f's3://scratch-tri-global/zubair.irshad/{DATASET_DIR}/{source}/{subset}')
+    _DATASET = datapoint.make_dataset(f'file://{DATASET_DIR}/{source}/{subset}')
         
     # compute model size
     model_file_path = ['obj_models/camera_val.pkl', 'obj_models/real_test.pkl']
