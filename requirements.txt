@@ -27,4 +27,5 @@ PyYAML
 pytorch-lightning==0.7.5
 scikit-image
 scipy==1.7.0
-
+torch==1.7.1
+torchvision==0.8.2
