@@ -31,8 +31,7 @@ for file in all_files:
         print("Done with", i, "files")
     try:
         with open(path, 'rb') as fh:
-        dp = decompress_datapoint(fh.read())
-
+            dp = decompress_datapoint(fh.read())
     except Exception as e:
         print(e)
         print("Error in file: ", file)
