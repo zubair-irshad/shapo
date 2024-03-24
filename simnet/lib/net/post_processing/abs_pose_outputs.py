@@ -93,18 +93,14 @@ class OBBOutput:
     
     #make it compatible with pl distributed 
 
-    heatmap_target = heatmap_target.to(obb_targets[0].heatmap.device)
+    heatmap_target = heatmap_target.to(self.heatmap.device)
 
 
 
     if obb_targets[0].shape_emb is not None:
       shape_emb_target = torch.stack([obb_target.shape_emb for obb_target in obb_targets])
       #shape_emb_target = shape_emb_target.to(torch.device('cuda:0'))
-      shape_emb_target = shape_emb_target.to(obb_targets[0].shape_emb.device)
-
-      print(f'heatmap_target.device: {heatmap_target.device}')
-      print(f'shape_emb_target.device: {self.shape_emb.device}')
-      print(f'shape_emb_target:{shape_emb_target.device}')
+      shape_emb_target = shape_emb_target.to(self.heatmap.device)
       
       shape_emb_loss = _mask_l1_loss(shape_emb_target, self.shape_emb, heatmap_target)
       log[f'{prefix}/shape_emb_loss'] = shape_emb_loss.item()
@@ -112,7 +108,7 @@ class OBBOutput:
     if obb_targets[0].appearance_emb is not None:
       appearance_emb_target = torch.stack([obb_target.appearance_emb for obb_target in obb_targets])
       # appearance_emb_target = appearance_emb_target.to(torch.device('cuda:0'))
-      appearance_emb_target = appearance_emb_target.to(obb_targets[0].appearance_emb.device)
+      appearance_emb_target = appearance_emb_target.to(self.heatmap.device)
       
       appearance_emb_loss = _mask_l1_loss(appearance_emb_target, self.appearance_emb, heatmap_target)
       log[f'{prefix}/appearance_emb_loss'] = appearance_emb_loss.item()
@@ -124,7 +120,7 @@ class OBBOutput:
     if obb_targets[0].abs_pose_field is not None:
       abs_pose_target = torch.stack([obb_target.abs_pose_field for obb_target in obb_targets])
       #abs_pose_target = abs_pose_target.to(torch.device('cuda:0'))
-      abs_pose_target = abs_pose_target.to(obb_targets[0].abs_pose_field.device)
+      abs_pose_target = abs_pose_target.to(self.heatmap.device)
 
       # svd rotation loss
       abs_rotation_loss = _mask_l1_loss(abs_pose_target[:,:9,:,:], self.abs_pose_field[:,:9,:,:], heatmap_target)
