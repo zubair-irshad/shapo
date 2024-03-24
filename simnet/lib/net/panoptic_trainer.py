@@ -15,6 +15,8 @@ from simnet.lib.net import common
 from simnet.lib.net.dataset import extract_left_numpy_img
 from simnet.lib.net.functions.learning_rate import lambda_learning_rate_poly, lambda_warmup
 
+from simnet.lib.net.post_processing.losses import compute_depth_loss, DisparityLoss, compute_seg_loss, compute_pose_shape_loss
+
 _GPU_TO_USE = 0
 
 class PanopticModel(pl.LightningModule):
@@ -31,6 +33,8 @@ class PanopticModel(pl.LightningModule):
     self.eval_metrics = eval_metric
     self.preprocess_func = preprocess_func
     self.save_hyperparameters()
+    _MAX_DISP = 128
+    self.disp_loss = DisparityLoss(_MAX_DISP, False)
 
   def forward(self, image):
     # seg_output, depth_output, small_depth_output, pose_output = self.model(
@@ -53,7 +57,7 @@ class PanopticModel(pl.LightningModule):
   def training_step(self, batch, batch_idx):
     # image, seg_target, depth_target, pose_targets, _, _ = batch
 
-    image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target = batch
+    image, seg_target, depth_target, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target = batch
     # seg_output, depth_output, small_depth_output, pose_outputs = self.forward(
     #     image
     # )
@@ -62,28 +66,39 @@ class PanopticModel(pl.LightningModule):
     log = {}
     prefix = 'train'
     
-    loss = depth_output.compute_loss(copy.deepcopy(depth_target), log, f'{prefix}_detailed/loss/refined_disp')
+    # loss = depth_output.compute_loss(copy.deepcopy(depth_target), log, f'{prefix}_detailed/loss/refined_disp')
+
+    loss = compute_depth_loss(self.disp_loss, depth_output, copy.deepcopy(depth_target), log, f'{prefix}_detailed/loss/train_cost_volume_disp', self.hparams)
+    # if self.hyperparams.depth_output is None:
+    #   loss = loss + small_depth_output.compute_loss(depth_target, log, f'{prefix}_detailed/loss/train_cost_volume_disp')
+
     if self.hyperparams.frozen_stereo_checkpoint is None:
-      loss = loss + small_depth_output.compute_loss(depth_target, log, f'{prefix}_detailed/loss/train_cost_volume_disp')
-    loss = loss + seg_output.compute_loss(seg_target, log, f'{prefix}_detailed/loss/seg')
-    if pose_targets[0] is not None:
-      loss = loss + pose_outputs.compute_loss(pose_targets, log, f'{prefix}_detailed/pose')
+      loss = loss + compute_depth_loss(self.disp_loss, small_disp_output, depth_target, log, f'{prefix}_detailed/loss/train_cost_volume_disp', self.hparams)
+
+    loss = loss + compute_seg_loss(seg_output, seg_target, log, f'{prefix}_detailed/loss/seg', self.hparams)
+    
+    # loss = loss + seg_output.compute_loss(seg_target, log, f'{prefix}_detailed/loss/seg')
+    # if pose_targets[0] is not None:
+      # loss = loss + pose_outputs.compute_loss(pose_targets, log, f'{prefix}_detailed/pose')
+    loss = loss + compute_pose_shape_loss(self, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output, log, f'{prefix}_detailed/pose', self.hparams):
+    
     log['train/loss/total'] = loss
     logger = self.logger.experiment
     logger.log(log)
 
-    if (batch_idx % 200) == 0:
-      with torch.no_grad():
-        llog = {}
-        prefix = 'train'
-        left_image_np = extract_left_numpy_img(image[0])
-        seg_pred_vis = seg_output.get_visualization_img(np.copy(left_image_np))
-        llog[f'{prefix}/seg'] = wandb.Image(seg_pred_vis, caption=prefix)
-        depth_vis = depth_output.get_visualization_img(np.copy(left_image_np))
-        llog[f'{prefix}/disparity'] = wandb.Image(depth_vis, caption=prefix)
-        small_depth_vis = small_depth_output.get_visualization_img(np.copy(left_image_np))
-        llog[f'{prefix}/small_disparity'] = wandb.Image(small_depth_vis, caption=prefix)
-        logger.log(llog)
+    #TODO, fix visualization
+    # if (batch_idx % 200) == 0:
+    #   with torch.no_grad():
+    #     llog = {}
+    #     prefix = 'train'
+    #     left_image_np = extract_left_numpy_img(image[0])
+    #     seg_pred_vis = seg_output.get_visualization_img(np.copy(left_image_np))
+    #     llog[f'{prefix}/seg'] = wandb.Image(seg_pred_vis, caption=prefix)
+    #     depth_vis = depth_output.get_visualization_img(np.copy(left_image_np))
+    #     llog[f'{prefix}/disparity'] = wandb.Image(depth_vis, caption=prefix)
+    #     small_depth_vis = small_depth_output.get_visualization_img(np.copy(left_image_np))
+    #     llog[f'{prefix}/small_disparity'] = wandb.Image(small_depth_vis, caption=prefix)
+    #     logger.log(llog)
     return {'loss': loss, 'log': log}
 
   def validation_step(self, batch, batch_idx):
@@ -108,25 +123,41 @@ class PanopticModel(pl.LightningModule):
     logger = self.logger.experiment
     with torch.no_grad():
       prefix_loss = 'validation'
-      loss = depth_output.compute_loss(copy.deepcopy(depth_target), log, f'{prefix_loss}_detailed/loss/refined_disp')
+
+      loss = compute_depth_loss(self.disp_loss, depth_output, copy.deepcopy(depth_target), log, f'{prefix_loss}_detailed/loss/train_cost_volume_disp', self.hparams)
+      # if self.hyperparams.depth_output is None:
+      #   loss = loss + small_depth_output.compute_loss(depth_target, log, f'{prefix}_detailed/loss/train_cost_volume_disp')
+
       if self.hyperparams.frozen_stereo_checkpoint is None:
-        loss = loss + small_depth_output.compute_loss(depth_target, log, f'{prefix_loss}_detailed_loss/train_cost_volume_disp')
-      loss = loss + seg_output.compute_loss(seg_target, log, f'{prefix_loss}_detailed/loss/seg')      
-      if pose_targets[0] is not None:
-        loss = loss + pose_outputs.compute_loss(pose_targets, log, f'{prefix_loss}_detailed/pose')
+        loss = loss + compute_depth_loss(self.disp_loss, small_disp_output, depth_target, log, f'{prefix_loss}_detailed/loss/train_cost_volume_disp', self.hparams)
+
+      loss = loss + compute_seg_loss(seg_output, seg_target, log, f'{prefix_loss}_detailed/loss/seg', self.hparams)
+      
+      
+      # loss = depth_output.compute_loss(copy.deepcopy(depth_target), log, f'{prefix_loss}_detailed/loss/refined_disp')
+      # if self.hyperparams.frozen_stereo_checkpoint is None:
+      #   loss = loss + small_depth_output.compute_loss(depth_target, log, f'{prefix_loss}_detailed_loss/train_cost_volume_disp')
+      # loss = loss + seg_output.compute_loss(seg_target, log, f'{prefix_loss}_detailed/loss/seg')      
+      # if pose_targets[0] is not None:
+      #   loss = loss + pose_outputs.compute_loss(pose_targets, log, f'{prefix_loss}_detailed/pose')
+
       log['validation/loss/total'] = loss.item()
-      if batch_idx < 5:
-        llog = {}
-        left_image_np = extract_left_numpy_img(image[0])
-        prefix = f'val/{batch_idx}'
-        depth_vis = depth_output.get_visualization_img(np.copy(left_image_np))
-        llog[f'{prefix}/disparity'] = wandb.Image(depth_vis, caption=prefix)
-        small_depth_vis = small_depth_output.get_visualization_img(np.copy(left_image_np))
-        llog[f'{prefix}/small_disparity'] = wandb.Image(small_depth_vis, caption=prefix)
-        self.eval_metrics.draw_detections(
-           seg_output,left_image_np, llog, prefix
-        )
-        logger.log(llog)
+
+      logger.log(log)
+
+      #TODO fix visualization
+      # if batch_idx < 5:
+      #   llog = {}
+      #   left_image_np = extract_left_numpy_img(image[0])
+      #   prefix = f'val/{batch_idx}'
+      #   depth_vis = depth_output.get_visualization_img(np.copy(left_image_np))
+      #   llog[f'{prefix}/disparity'] = wandb.Image(depth_vis, caption=prefix)
+      #   small_depth_vis = small_depth_output.get_visualization_img(np.copy(left_image_np))
+      #   llog[f'{prefix}/small_disparity'] = wandb.Image(small_depth_vis, caption=prefix)
+      #   self.eval_metrics.draw_detections(
+      #      seg_output,left_image_np, llog, prefix
+      #   )
+      #   logger.log(llog)
     return log
 
   def validation_epoch_end(self, outputs):
