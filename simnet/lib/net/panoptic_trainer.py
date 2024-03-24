@@ -10,12 +10,14 @@ np.random.seed(123456)
 import torch
 import wandb
 import pytorch_lightning as pl
+import torch.distributed as dist
 
 from simnet.lib.net import common
 from simnet.lib.net.dataset import extract_left_numpy_img
 from simnet.lib.net.functions.learning_rate import lambda_learning_rate_poly, lambda_warmup
 
 from simnet.lib.net.post_processing.losses import compute_depth_loss, DisparityLoss, compute_seg_loss, compute_pose_shape_loss
+from simnet.lib.net.post_processing.visualization import get_seg_visualization_img, get_depth_visualization_img
 
 _GPU_TO_USE = 0
 
@@ -87,7 +89,24 @@ class PanopticModel(pl.LightningModule):
     logger.log(log)
 
     #TODO, fix visualization
-    # if (batch_idx % 200) == 0:
+    rank = dist.get_rank()
+    if (batch_idx % 1000) == 0 and rank ==0:
+      with torch.no_grad():
+        llog = {}
+        prefix = 'train'
+        left_image_np = extract_left_numpy_img(image[0])
+       
+        seg_pred_vis = get_seg_visualization_img(left_image_np, seg_output)
+        llog[f'{prefix}/seg'] = wandb.Image(seg_pred_vis, caption=prefix)
+
+        depth_vis = get_depth_visualization_img(left_image_np, depth_output)
+        llog[f'{prefix}/disparity'] = wandb.Image(depth_vis, caption=prefix)
+
+        small_depth_vis = get_depth_visualization_img(left_image_np, small_disp_output)
+        llog[f'{prefix}/small_disparity'] = wandb.Image(small_depth_vis, caption=prefix)
+        logger.log(llog)
+
+    # if (batch_idx % 1000) == 0 and :
     #   with torch.no_grad():
     #     llog = {}
     #     prefix = 'train'
@@ -141,7 +160,22 @@ class PanopticModel(pl.LightningModule):
 
       log['validation/loss/total'] = loss.item()
 
-      logger.log(log)
+      rank = dist.get_rank()
+      if rank == 0 and batch_idx <5:
+        llog = {}
+        prefix = f'val/{batch_idx}'
+        left_image_np = extract_left_numpy_img(image[0])
+        
+        seg_pred_vis = get_seg_visualization_img(left_image_np, seg_output)
+        llog[f'{prefix}/seg'] = wandb.Image(seg_pred_vis, caption=prefix)
+
+        depth_vis = get_depth_visualization_img(left_image_np, depth_output)
+        llog[f'{prefix}/disparity'] = wandb.Image(depth_vis, caption=prefix)
+
+        small_depth_vis = get_depth_visualization_img(left_image_np, small_disp_output)
+        llog[f'{prefix}/small_disparity'] = wandb.Image(small_depth_vis, caption=prefix)
+        logger.log(llog)
+        logger.log(log)
 
       #TODO fix visualization
       # if batch_idx < 5:
