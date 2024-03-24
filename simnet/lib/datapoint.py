@@ -326,8 +326,13 @@ class LocalReadHandle:
 
   def read(self):
     path = _datapoint_path(self.dataset_path, self.uid)
-    with open(path, 'rb') as fh:
-      dp = decompress_datapoint(fh.read())
+    try:
+      with open(path, 'rb') as fh:
+        dp = decompress_datapoint(fh.read())
+    except Exception as e:
+      print(e)
+      print('Error in file:', path)
+      raise
     # TODO: remove this, once old datasets without UID are out of use
     if not hasattr(dp, 'uid'):
       dp.uid = self.uid
