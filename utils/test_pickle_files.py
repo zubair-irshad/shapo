@@ -28,7 +28,7 @@ i=0
 for file in all_files:
     
     file_path = os.path.join(data_path, file)
-    if i >10000:
+    if i %10000==0:
         print("Done with", i, "files")
     try:
         with open(file_path, 'rb') as fh:
