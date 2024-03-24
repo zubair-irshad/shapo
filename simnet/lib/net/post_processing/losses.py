@@ -149,8 +149,6 @@ _mask_l1_loss = MaskedL1Loss()
 _mse_loss = MSELoss()
 
 def compute_pose_shape_loss(self, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target, heatmap, shape_emb, appearance_emb, abs_pose_field, log, prefix, hparams):
-    if self.is_numpy:
-        raise ValueError("Output is not in torch mode")
         
     shape_emb_loss = _mask_l1_loss(shape_emb_target, shape_emb, heatmap_target)
     log[f'{prefix}/shape_emb_loss'] = shape_emb_loss.item()
