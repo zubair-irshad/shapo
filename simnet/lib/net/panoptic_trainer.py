@@ -90,7 +90,7 @@ class PanopticModel(pl.LightningModule):
 
     #TODO, fix visualization
     rank = dist.get_rank()
-    if (batch_idx % 1000) == 0 and rank ==0:
+    if (batch_idx % 200) == 0 and rank ==0:
       with torch.no_grad():
         llog = {}
         prefix = 'train'
