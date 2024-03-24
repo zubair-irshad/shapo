@@ -27,10 +27,11 @@ all_files = os.listdir(data_path)
 i=0
 for file in all_files:
     
+    file_path = os.path.join(data_path, file)
     if i >10000:
         print("Done with", i, "files")
     try:
-        with open(file, 'rb') as fh:
+        with open(file_path, 'rb') as fh:
             dp = decompress_datapoint(fh.read())
     except Exception as e:
         print(e)
