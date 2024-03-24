@@ -90,22 +90,58 @@ def get_config_value(hparams, prefix, key):
     return None
 
 
+# def get_loader(hparams, prefix, preprocess_func=None, datapoint_dataset=None):
+#   datasets = []
+#   path = get_config_value(hparams, prefix, 'path')
+#   datasets.append(
+#       Dataset(
+#           path, hparams, preprocess_image_func=preprocess_func, datapoint_dataset=datapoint_dataset
+#       )
+#   )
+#   batch_size = get_config_value(hparams, prefix, "batch_size")
+
+#   collate_fn = simnet_collate
+#   if prefix == 'train':
+#     return DataLoader(
+#         ConcatDataset(datasets),
+#         batch_size=batch_size,
+#         collate_fn=collate_fn,
+#         num_workers=get_config_value(hparams, prefix, "num_workers"),
+#         pin_memory=False,
+#         drop_last=True, 
+#         shuffle=True
+#     )
+#   else:
+#     return DataLoader(
+#       ConcatDataset(datasets),
+#       batch_size=batch_size,
+#       collate_fn=collate_fn,
+#       num_workers=get_config_value(hparams, prefix, "num_workers"),
+#       pin_memory=False,
+#       drop_last=True, 
+#       shuffle=False
+#   )
+
 def get_loader(hparams, prefix, preprocess_func=None, datapoint_dataset=None):
-  datasets = []
-  path = get_config_value(hparams, prefix, 'path')
-  datasets.append(
-      Dataset(
-          path, hparams, preprocess_image_func=preprocess_func, datapoint_dataset=datapoint_dataset
-      )
+  # datasets = []
+  # path = get_config_value(hparams, prefix, 'path')
+  # datasets.append(
+  #     Dataset(
+  #         path, hparams, preprocess_image_func=preprocess_func, datapoint_dataset=datapoint_dataset
+  #     )
+  # )
+
+  dataset = Dataset(
+      get_config_value(hparams, prefix, 'path'), hparams, preprocess_image_func=preprocess_func, datapoint_dataset=datapoint_dataset
   )
   batch_size = get_config_value(hparams, prefix, "batch_size")
 
   collate_fn = simnet_collate
   if prefix == 'train':
     return DataLoader(
-        ConcatDataset(datasets),
+        # ConcatDataset(datasets),
+        dataset,
         batch_size=batch_size,
-        collate_fn=collate_fn,
         num_workers=get_config_value(hparams, prefix, "num_workers"),
         pin_memory=False,
         drop_last=True, 
@@ -113,9 +149,9 @@ def get_loader(hparams, prefix, preprocess_func=None, datapoint_dataset=None):
     )
   else:
     return DataLoader(
-      ConcatDataset(datasets),
+      # ConcatDataset(datasets),
+      dataset,
       batch_size=batch_size,
-      collate_fn=collate_fn,
       num_workers=get_config_value(hparams, prefix, "num_workers"),
       pin_memory=False,
       drop_last=True, 

@@ -14,6 +14,7 @@ from simnet.lib import datapoint
 from simnet.lib.net.post_processing.segmentation_outputs import SegmentationOutput
 from simnet.lib.net.post_processing.depth_outputs import DepthOutput
 from simnet.lib.net.post_processing.abs_pose_outputs import OBBOutput
+from torch.utils.data import ConcatDataset, DataLoader
 
 def extract_left_numpy_img(anaglyph):
   anaglyph_np = np.ascontiguousarray(anaglyph.cpu().numpy())
@@ -168,8 +169,22 @@ if __name__ == "__main__":
           path, hparams, preprocess_image_func=None, datapoint_dataset=train_ds
       )
   
-  print(len(dataset))
+  dataloader =  DataLoader(
+      # ConcatDataset(datasets),
+      dataset,
+      batch_size=8,
+      num_workers=get_config_value(hparams, 'train', "num_workers"),
+      pin_memory=False,
+      drop_last=True, 
+      shuffle=True
+  )
+  
+  # print(len(dataset))
 
-  anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field = dataset[0]
+  # anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field = dataset[0]
 
-  print("anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field", anaglyph.shape, segmentation_target.shape, depth_target.shape, heatmap.shape, shape_emb.shape, appearance_emb.shape, abs_pose_field.shape)
+  # print("anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field", anaglyph.shape, segmentation_target.shape, depth_target.shape, heatmap.shape, shape_emb.shape, appearance_emb.shape, abs_pose_field.shape)
+
+  for anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field in dataloader:
+    print("anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field", anaglyph.shape, segmentation_target.shape, depth_target.shape, heatmap.shape, shape_emb.shape, appearance_emb.shape, abs_pose_field.shape)
+    break
