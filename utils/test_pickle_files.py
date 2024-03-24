@@ -30,7 +30,7 @@ for file in all_files:
     if i >10000:
         print("Done with", i, "files")
     try:
-        with open(path, 'rb') as fh:
+        with open(file, 'rb') as fh:
             dp = decompress_datapoint(fh.read())
     except Exception as e:
         print(e)
