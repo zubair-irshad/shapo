@@ -43,7 +43,8 @@ class SegmentationOutput:
     for seg_target in seg_targets:
       seg_target_stacked.append(seg_target.seg_pred)
     seg_target_batch = torch.stack(seg_target_stacked)
-    seg_target_batch = seg_target_batch.to(torch.device('cuda:0'))
+    #seg_target_batch = seg_target_batch.to(torch.device('cuda:0'))
+    seg_target_batch = seg_target_batch.to(self.seg_pred.device)
     seg_loss = F.cross_entropy(self.seg_pred, seg_target_batch, reduction="mean", ignore_index=-100)
     # log['segmentation'] = seg_loss
     log[name] = seg_loss.item()

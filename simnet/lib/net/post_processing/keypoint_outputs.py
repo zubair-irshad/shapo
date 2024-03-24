@@ -60,7 +60,8 @@ class KeypointOutput:
     ])
 
     # Move to GPU
-    heatmap_target = heatmap_target.to(torch.device('cuda:0'))
+    #heatmap_target = heatmap_target.to(torch.device('cuda:0'))
+    heatmap_target = heatmap_target.to(self.heatmap.device)
 
     heatmap_loss = self.loss(self.heatmap, heatmap_target)
     log['keypoint'] = heatmap_loss
