@@ -108,7 +108,7 @@ class Dataset(Dataset):
     # segmentation_target = SegmentationOutput(dp.segmentation, self.hparams)
     segmentation_target = dp.segmentation
 
-    segmentation_target.convert_to_torch_from_numpy()
+    # segmentation_target.convert_to_torch_from_numpy()
     segmentation_target = torch.from_numpy(segmentation_target).long()
 
 
