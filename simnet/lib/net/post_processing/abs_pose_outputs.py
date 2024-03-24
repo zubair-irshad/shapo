@@ -95,14 +95,16 @@ class OBBOutput:
 
     heatmap_target = heatmap_target.to(obb_targets[0].heatmap.device)
 
-    print(f'heatmap_target.device: {heatmap_target.device}')
-    print(f'shape_emb_target.device: {self.shape_emb.device}')
-    print(f'shape_emb_target:{shape_emb_target.device}')
+
 
     if obb_targets[0].shape_emb is not None:
       shape_emb_target = torch.stack([obb_target.shape_emb for obb_target in obb_targets])
       #shape_emb_target = shape_emb_target.to(torch.device('cuda:0'))
       shape_emb_target = shape_emb_target.to(obb_targets[0].shape_emb.device)
+
+      print(f'heatmap_target.device: {heatmap_target.device}')
+      print(f'shape_emb_target.device: {self.shape_emb.device}')
+      print(f'shape_emb_target:{shape_emb_target.device}')
       
       shape_emb_loss = _mask_l1_loss(shape_emb_target, self.shape_emb, heatmap_target)
       log[f'{prefix}/shape_emb_loss'] = shape_emb_loss.item()
