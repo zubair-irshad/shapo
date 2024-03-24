@@ -42,7 +42,7 @@ class PanopticModel(pl.LightningModule):
     # )
     seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output = self.model(image)
 
-    print("seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output", seg_output.shape, depth_output.shape, small_disp_output.shape, heatmap_output.shape, shape_emb_output.shape, appearance_emb_output.shape, abs_pose_output.shape)
+    #print("seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output", seg_output.shape, depth_output.shape, small_disp_output.shape, heatmap_output.shape, shape_emb_output.shape, appearance_emb_output.shape, abs_pose_output.shape)
     return seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output
   
   # def optimizer_step(self, epoch_nb, batch_nb, optimizer, optimizer_i, second_order_closure=None):
@@ -114,9 +114,6 @@ class PanopticModel(pl.LightningModule):
     # )
 
     image, seg_target, depth_target, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target = batch
-
-    print("image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target", image.shape, seg_target.shape, depth_target.shape, heatmap_target.shape, shape_emb_target.shape, appearance_emb_target.shape, abs_pose_target.shape)
-
     seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output = self.forward(image)
 
     log = {}

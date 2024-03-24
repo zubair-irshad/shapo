@@ -1,9 +1,9 @@
---max_steps=25
+--max_steps=38000
 --model_file=models/panoptic_net.py
 --model_name=res_fpn
 --output=results
 --exp_name=ShAPO_TrainSynthetic
---train_path=file:///data/ShAPO_Data_tiny/CAMERA/train
+--train_path=file:///data_2/ShAPO_Data/CAMERA/train
 --train_batch_size=32
 --train_num_workers=10
 --val_path=file:///data/ShAPO_Data/CAMERA/val
