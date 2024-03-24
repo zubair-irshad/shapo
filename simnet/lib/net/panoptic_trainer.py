@@ -68,19 +68,19 @@ class PanopticModel(pl.LightningModule):
     
     # loss = depth_output.compute_loss(copy.deepcopy(depth_target), log, f'{prefix}_detailed/loss/refined_disp')
 
-    loss = compute_depth_loss(self.disp_loss, depth_output, copy.deepcopy(depth_target), log, f'{prefix}_detailed/loss/train_cost_volume_disp', self.hparams)
+    loss = compute_depth_loss(self.disp_loss, depth_output, copy.deepcopy(depth_target), log, f'{prefix}_detailed/loss/train_cost_volume_disp', self.hyperparams)
     # if self.hyperparams.depth_output is None:
     #   loss = loss + small_depth_output.compute_loss(depth_target, log, f'{prefix}_detailed/loss/train_cost_volume_disp')
 
     if self.hyperparams.frozen_stereo_checkpoint is None:
-      loss = loss + compute_depth_loss(self.disp_loss, small_disp_output, depth_target, log, f'{prefix}_detailed/loss/train_cost_volume_disp', self.hparams)
+      loss = loss + compute_depth_loss(self.disp_loss, small_disp_output, depth_target, log, f'{prefix}_detailed/loss/train_cost_volume_disp', self.hyperparams)
 
-    loss = loss + compute_seg_loss(seg_output, seg_target, log, f'{prefix}_detailed/loss/seg', self.hparams)
+    loss = loss + compute_seg_loss(seg_output, seg_target, log, f'{prefix}_detailed/loss/seg', self.hyperparams)
     
     # loss = loss + seg_output.compute_loss(seg_target, log, f'{prefix}_detailed/loss/seg')
     # if pose_targets[0] is not None:
       # loss = loss + pose_outputs.compute_loss(pose_targets, log, f'{prefix}_detailed/pose')
-    loss = loss + compute_pose_shape_loss(self, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output, log, f'{prefix}_detailed/pose', self.hparams)
+    loss = loss + compute_pose_shape_loss(self, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output, log, f'{prefix}_detailed/pose', self.hyperparams)
     
     log['train/loss/total'] = loss
     logger = self.logger.experiment
@@ -124,16 +124,16 @@ class PanopticModel(pl.LightningModule):
     with torch.no_grad():
       prefix_loss = 'validation'
 
-      loss = compute_depth_loss(self.disp_loss, depth_output, copy.deepcopy(depth_target), log, f'{prefix_loss}_detailed/loss/train_cost_volume_disp', self.hparams)
+      loss = compute_depth_loss(self.disp_loss, depth_output, copy.deepcopy(depth_target), log, f'{prefix_loss}_detailed/loss/train_cost_volume_disp', self.hyperparams)
       # if self.hyperparams.depth_output is None:
       #   loss = loss + small_depth_output.compute_loss(depth_target, log, f'{prefix}_detailed/loss/train_cost_volume_disp')
 
       if self.hyperparams.frozen_stereo_checkpoint is None:
-        loss = loss + compute_depth_loss(self.disp_loss, small_disp_output, depth_target, log, f'{prefix_loss}_detailed/loss/train_cost_volume_disp', self.hparams)
+        loss = loss + compute_depth_loss(self.disp_loss, small_disp_output, depth_target, log, f'{prefix_loss}_detailed/loss/train_cost_volume_disp', self.hyperparams)
 
-      loss = loss + compute_seg_loss(seg_output, seg_target, log, f'{prefix_loss}_detailed/loss/seg', self.hparams)
+      loss = loss + compute_seg_loss(seg_output, seg_target, log, f'{prefix_loss}_detailed/loss/seg', self.hyperparams)
       
-      loss = loss + compute_pose_shape_loss(self, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output, log, f'{prefix_loss}_detailed/pose', self.hparams)
+      loss = loss + compute_pose_shape_loss(self, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output, log, f'{prefix_loss}_detailed/pose', self.hyperparams)
       
       # loss = depth_output.compute_loss(copy.deepcopy(depth_target), log, f'{prefix_loss}_detailed/loss/refined_disp')
       # if self.hyperparams.frozen_stereo_checkpoint is None:
