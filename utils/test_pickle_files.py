@@ -24,8 +24,10 @@ data_path = '/data_2/ShAPO_Data/CAMERA/train'
 
 all_files = os.listdir(data_path)
 
+print("Total files: ", len(all_files))
+all_files = all_files[240000:]
 
-all_files = all_files[24000:]
+print("Total files: ", len(all_files))
 i=0
 for file in all_files:
     
