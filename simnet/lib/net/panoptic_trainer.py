@@ -82,7 +82,9 @@ class PanopticModel(pl.LightningModule):
   def validation_step(self, batch, batch_idx):
     image, seg_target, depth_target, pose_targets, detections_gt, scene_name = batch
     # dt = [di.depth_pred.cuda().unsqueeze(0) for di in depth_target]
-    dt = [di.depth_pred.to(image.device).unsqueeze(0) for di in depth_target]
+    # dt = [di.depth_pred.to(image.device).unsqueeze(0) for di in depth_target]
+
+    dt = [di.depth_pred.to(self.device).unsqueeze(0) for di in depth_target]
     dt = torch.stack(dt)
     real_image = torch.cat([image[:,:3,:,:], dt], dim=1)
     seg_output, depth_output, small_depth_output, pose_outputs = self.forward(

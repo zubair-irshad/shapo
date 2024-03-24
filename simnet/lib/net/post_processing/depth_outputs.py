@@ -50,7 +50,7 @@ class DepthOutput:
       depth_target_stacked.append(depth_target.depth_pred)
     depth_target_batch = torch.stack(depth_target_stacked)
     #depth_target_batch = depth_target_batch.to(torch.device('cuda:0'))
-    depth_target_batch = depth_target_batch.to(self.depth_pred.device)
+    # depth_target_batch = depth_target_batch.to(self.depth_pred.device)
     depth_loss = self.disp_loss(self.depth_pred, depth_target_batch)
     log[name] = depth_loss.item()
     return self.hparams.loss_depth_mult * depth_loss
