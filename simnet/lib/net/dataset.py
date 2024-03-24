@@ -172,4 +172,4 @@ if __name__ == "__main__":
 
   anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field = dataset[0]
 
-  print("anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field", anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field)
+  print("anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field", anaglyph.shape, segmentation_target.shape, depth_target.shape, heatmap.shape, shape_emb.shape, appearance_emb.shape, abs_pose_field.shape)
