@@ -27,7 +27,7 @@ from simnet.lib import camera
 from simnet.lib.net.panoptic_trainer import PanopticModel
 import pathlib
 _GPU_TO_USE = 0
-from pytorch_lightning.plugins import DDPPlugin
+from pytorch_lightning.strategies.ddp import DDPStrategy
 
 class EvalMethod():
 
@@ -78,9 +78,7 @@ if __name__ == "__main__":
         max_epochs=epochs,
         accelerator='gpu',
         devices=[0,2,3,4,5,6,7],
-        strategy = 'ddp',
-        # devices=[_GPU_TO_USE],
-        plugins=DDPPlugin(find_unused_parameters=False),
+        strategy = DDPStrategy(find_unused_parameters=False),
         callbacks=[model_checkpoint],
         val_check_interval=1.0,
         logger=wandb_logger,
@@ -93,8 +91,7 @@ if __name__ == "__main__":
         max_epochs=epochs,
         accelerator='gpu',
         devices=[0,2,3,4,5,6,7],
-        strategy = 'ddp',
-        plugins=DDPPlugin(find_unused_parameters=False),
+        strategy = DDPStrategy(find_unused_parameters=False),
         # devices=[_GPU_TO_USE],
         callbacks=[model_checkpoint],
         val_check_interval=1.0,
