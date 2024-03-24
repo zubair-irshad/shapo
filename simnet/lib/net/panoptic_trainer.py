@@ -51,7 +51,7 @@ class PanopticModel(pl.LightningModule):
       super().optimizer_step(*args, **kwargs)
 
   def training_step(self, batch, batch_idx):
-    image, seg_target, depth_target, pose_targets, _, _ = batch
+    # image, seg_target, depth_target, pose_targets, _, _ = batch
 
     image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target = batch
     # seg_output, depth_output, small_depth_output, pose_outputs = self.forward(
@@ -87,16 +87,23 @@ class PanopticModel(pl.LightningModule):
     return {'loss': loss, 'log': log}
 
   def validation_step(self, batch, batch_idx):
-    image, seg_target, depth_target, pose_targets, _, scene_name = batch
-    # dt = [di.depth_pred.cuda().unsqueeze(0) for di in depth_target]
-    # dt = [di.depth_pred.to(image.device).unsqueeze(0) for di in depth_target]
+    # image, seg_target, depth_target, pose_targets, _, scene_name = batch
+    # # dt = [di.depth_pred.cuda().unsqueeze(0) for di in depth_target]
+    # # dt = [di.depth_pred.to(image.device).unsqueeze(0) for di in depth_target]
 
-    dt = [di.depth_pred.to(self.device).unsqueeze(0) for di in depth_target]
-    dt = torch.stack(dt)
-    real_image = torch.cat([image[:,:3,:,:], dt], dim=1)
-    seg_output, depth_output, small_depth_output, pose_outputs = self.forward(
-        real_image
-    )
+    # dt = [di.depth_pred.to(self.device).unsqueeze(0) for di in depth_target]
+    # dt = torch.stack(dt)
+    # real_image = torch.cat([image[:,:3,:,:], dt], dim=1)
+    # seg_output, depth_output, small_depth_output, pose_outputs = self.forward(
+    #     real_image
+    # )
+
+    image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target = batch
+
+    print("image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target", image.shape, seg_target.shape, depth_target.shape, heatmap_taget.shape, shape_emb_target.shape, appearance_emb_target.shape, abs_pose_field_target.shape)
+
+    seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output = self.forward(image)
+
     log = {}
     logger = self.logger.experiment
     with torch.no_grad():
