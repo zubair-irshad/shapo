@@ -25,7 +25,7 @@ data_path = '/data_2/ShAPO_Data/CAMERA/train'
 all_files = os.listdir(data_path)
 
 
-files = files[24000:]
+all_files = all_files[24000:]
 i=0
 for file in all_files:
     
