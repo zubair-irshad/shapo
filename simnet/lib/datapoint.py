@@ -142,6 +142,7 @@ def make_one_simple_dataset(uri):
   if uri.startswith('file://'):
     path = uri.partition('file://')[2]
     dataset_path = pathlib.Path(path)
+    print('dataset_path', dataset_path)
     return LocalDataset(dataset_path)
 
   raise ValueError(f'uri must start with `s3://` or `file://`. uri={uri}')

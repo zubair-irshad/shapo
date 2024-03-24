@@ -11,8 +11,13 @@ def main():
     parser.add_argument('--type',type=str, default='train')
     args = parser.parse_args()
 
-    worker_per_gpu = 6
-    workers = torch.cuda.device_count() * worker_per_gpu
+    worker_per_gpu = 10
+    num_gpus = 6
+    # workers = torch.cuda.device_count() * worker_per_gpu
+
+    workers = num_gpus * worker_per_gpu
+
+    print("torch.cuda.device_count()", torch.cuda.device_count())
     
     if args.type=='camera_train':
         list_all = open(os.path.join(args.data_dir, 'CAMERA', 'train_list_all.txt')).read().splitlines()
@@ -32,12 +37,15 @@ def main():
         start = i * frames_per_worker
         end = start + frames_per_worker
 
-        print(i, curr_gpu)
-        print(all_frames[start:end])
+
         print("start, : end", start, end)
 
         my_env = os.environ.copy()
-        my_env["CUDA_VISIBLE_DEVICES"] = str(curr_gpu)
+        my_env["CUDA_VISIBLE_DEVICES"] = str(curr_gpu+2)
+
+        print(i, curr_gpu+2)
+        print(all_frames[start:end])
+
         command = [
             './runner.sh', 'prepare_data/distributed_worker.py', 
             '--data_dir', str(args.data_dir), 

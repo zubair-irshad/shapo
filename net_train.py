@@ -16,7 +16,6 @@ import torch
 torch.manual_seed(12345)
 
 import wandb
-from pytorch_lightning.profiler import SimpleProfiler
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -54,6 +53,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
   common.add_train_args(parser)
   hparams = parser.parse_args()
+  print("hparams.train_path", hparams.train_path)
   train_ds = datapoint.make_dataset(hparams.train_path)
   samples_per_epoch = len(train_ds.list())
   samples_per_step = hparams.train_batch_size
@@ -68,37 +68,31 @@ if __name__ == "__main__":
   print('Epochs:', epochs)
   output_path = pathlib.Path(hparams.output) / hparams.exp_name
   output_path.mkdir(parents=True, exist_ok=True)
+
   model = PanopticModel(hparams, epochs, train_ds, EvalMethod())
-  model_checkpoint = ModelCheckpoint(filepath=output_path, save_top_k=-1, period=1, mode='max')
+  model_checkpoint = ModelCheckpoint(dirpath=output_path, save_top_k=-1, mode='max')
   wandb_logger = loggers.WandbLogger(name=hparams.wandb_name, project='ShAPO')
-  
-  profiler = SimpleProfiler()
 
   if hparams.finetune_real:
     trainer = pl.Trainer(
-        max_nb_epochs=epochs,
-        early_stop_callback=None,
-        gpus=[_GPU_TO_USE],
-        checkpoint_callback=model_checkpoint,
+        max_epochs=epochs,
+        accelerator='gpu',
+        devices=[0],
+        # devices=[_GPU_TO_USE],
+        callbacks=[model_checkpoint],
         val_check_interval=1.0,
         logger=wandb_logger,
-        default_save_path=output_path,
-        use_amp=False,
-        print_nan_grads=True,
         resume_from_checkpoint=hparams.checkpoint
     )
   else:
     trainer = pl.Trainer(
-        max_nb_epochs=epochs,
-        early_stop_callback=None,
-        gpus=[_GPU_TO_USE],
-        checkpoint_callback=model_checkpoint,
+        max_epochs=epochs,
+        accelerator='gpu',
+        devices=[0],
+        # devices=[_GPU_TO_USE],
+        callbacks=[model_checkpoint],
         val_check_interval=1.0,
         logger=wandb_logger,
-        default_save_path=output_path,
-        use_amp=False,
-        print_nan_grads=True,
-        profiler=profiler
     )
 
   trainer.fit(model)

@@ -16,19 +16,21 @@ from simnet.lib.net.dataset import extract_left_numpy_img
 from simnet.lib.net.functions.learning_rate import lambda_learning_rate_poly, lambda_warmup
 
 _GPU_TO_USE = 0
+
 class PanopticModel(pl.LightningModule):
   def __init__(
       self, hparams, epochs=None, train_dataset=None, eval_metric=None, preprocess_func=None
   ):
     super().__init__()
 
-    self.hparams = hparams
+    self.hyperparams = hparams
     self.epochs = epochs
     self.train_dataset = train_dataset
 
     self.model = common.get_model(hparams)
     self.eval_metrics = eval_metric
     self.preprocess_func = preprocess_func
+    self.save_hyperparameters()
 
   def forward(self, image):
     seg_output, depth_output, small_depth_output, pose_output = self.model(
@@ -36,11 +38,14 @@ class PanopticModel(pl.LightningModule):
     )
     return seg_output, depth_output, small_depth_output, pose_output
   
-  def optimizer_step(self, epoch_nb, batch_nb, optimizer, optimizer_i, second_order_closure=None):
-    super().optimizer_step(epoch_nb, batch_nb, optimizer, optimizer_i, second_order_closure)
-    if batch_nb == 0:
-      for param_group in optimizer.param_groups:
-        learning_rate = param_group['lr']
+  # def optimizer_step(self, epoch_nb, batch_nb, optimizer, optimizer_i, second_order_closure=None):
+  #   super().optimizer_step(epoch_nb, batch_nb, optimizer, optimizer_i, second_order_closure)
+  #   if batch_nb == 0:
+  #     for param_group in optimizer.param_groups:
+  #       learning_rate = param_group['lr']
+
+  def optimizer_step(self, *args, **kwargs):
+      super().optimizer_step(*args, **kwargs)
 
   def training_step(self, batch, batch_idx):
     image, seg_target, depth_target, pose_targets, _, _ = batch
@@ -51,19 +56,20 @@ class PanopticModel(pl.LightningModule):
     prefix = 'train'
     
     loss = depth_output.compute_loss(copy.deepcopy(depth_target), log, f'{prefix}_detailed/loss/refined_disp')
-    if self.hparams.frozen_stereo_checkpoint is None:
+    if self.hyperparams.frozen_stereo_checkpoint is None:
       loss = loss + small_depth_output.compute_loss(depth_target, log, f'{prefix}_detailed/loss/train_cost_volume_disp')
     loss = loss + seg_output.compute_loss(seg_target, log, f'{prefix}_detailed/loss/seg')
     if pose_targets[0] is not None:
       loss = loss + pose_outputs.compute_loss(pose_targets, log, f'{prefix}_detailed/pose')
     log['train/loss/total'] = loss
+    logger = self.logger.experiment
+    logger.log(log)
 
     if (batch_idx % 200) == 0:
       with torch.no_grad():
         llog = {}
         prefix = 'train'
         left_image_np = extract_left_numpy_img(image[0])
-        logger = self.logger.experiment
         seg_pred_vis = seg_output.get_visualization_img(np.copy(left_image_np))
         llog[f'{prefix}/seg'] = wandb.Image(seg_pred_vis, caption=prefix)
         depth_vis = depth_output.get_visualization_img(np.copy(left_image_np))
@@ -86,7 +92,7 @@ class PanopticModel(pl.LightningModule):
     with torch.no_grad():
       prefix_loss = 'validation'
       loss = depth_output.compute_loss(copy.deepcopy(depth_target), log, f'{prefix_loss}_detailed/loss/refined_disp')
-      if self.hparams.frozen_stereo_checkpoint is None:
+      if self.hyperparams.frozen_stereo_checkpoint is None:
         loss = loss + small_depth_output.compute_loss(depth_target, log, f'{prefix_loss}_detailed_loss/train_cost_volume_disp')
       loss = loss + seg_output.compute_loss(seg_target, log, f'{prefix_loss}_detailed/loss/seg')      
       if pose_targets[0] is not None:
@@ -116,22 +122,30 @@ class PanopticModel(pl.LightningModule):
     log = {}
     return {'log': log}
 
-  @pl.data_loader
   def train_dataloader(self):
     return common.get_loader(
-        self.hparams,
+        self.hyperparams,
         "train",
         preprocess_func=self.preprocess_func,
         datapoint_dataset=self.train_dataset
     )
-  @pl.data_loader
+
+
   def val_dataloader(self):
-    return common.get_loader(self.hparams, "val", preprocess_func=self.preprocess_func)
+    return common.get_loader(self.hyperparams, "val", preprocess_func=self.preprocess_func)
+
+  # def configure_optimizers(self):
+  #   optimizer = torch.optim.Adam(self.parameters(), lr=self.hyperparams.optim_learning_rate)
+  #   lr_lambda = lambda_learning_rate_poly(self.epochs, self.hyperparams.optim_poly_exp)
+  #   if self.hyperparams.optim_warmup_epochs is not None and self.hyperparams.optim_warmup_epochs > 0:
+  #     lr_lambda = lambda_warmup(self.hyperparams.optim_warmup_epochs, 0.2, lr_lambda)
+  #   scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
+  #   return [optimizer], [scheduler]
 
   def configure_optimizers(self):
-    optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.optim_learning_rate)
-    lr_lambda = lambda_learning_rate_poly(self.epochs, self.hparams.optim_poly_exp)
-    if self.hparams.optim_warmup_epochs is not None and self.hparams.optim_warmup_epochs > 0:
-      lr_lambda = lambda_warmup(self.hparams.optim_warmup_epochs, 0.2, lr_lambda)
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
-    return [optimizer], [scheduler]
+      optimizer = torch.optim.Adam(self.parameters(), lr=self.hyperparams.optim_learning_rate)
+      lr_lambda = lambda_learning_rate_poly(self.epochs, self.hyperparams.optim_poly_exp)
+      if self.hyperparams.optim_warmup_epochs is not None and self.hyperparams.optim_warmup_epochs > 0:
+          lr_lambda = lambda_warmup(self.hyperparams.optim_warmup_epochs, 0.2, lr_lambda)
+      self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
+      return optimizer

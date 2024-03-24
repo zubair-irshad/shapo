@@ -148,7 +148,7 @@ def process_data(img_path, depth):
 
 def annotate_camera_train(data_dir, start, end):
     DATASET_NAME = 'ShAPO_Data'
-    DATASET_DIR = pathlib.Path(f'data/{DATASET_NAME}')
+    DATASET_DIR = pathlib.Path(f'/data_2/{DATASET_NAME}')
     DATASET_DIR.mkdir(parents=True, exist_ok=True)
     # _DATASET = datapoint.make_dataset(f's3://scratch-tri-global/zubair.irshad/{DATASET_DIR}/CAMERA/train')
     _DATASET = datapoint.make_dataset(f'file://{DATASET_DIR}/CAMERA/train')
@@ -182,7 +182,6 @@ def annotate_camera_train(data_dir, start, end):
                     os.path.exists(depth_full_path)
         if not all_exist:
             continue
-        print("depth_full_path", depth_full_path)
         depth = load_depth(depth_full_path)
         masks, coords, class_ids, instance_ids, model_list, bboxes = process_data(img_full_path, depth)
         if instance_ids is None:
@@ -254,7 +253,7 @@ def annotate_camera_train(data_dir, start, end):
 def annotate_real_train(data_dir, start, end):
 
     DATASET_NAME = 'ShAPO_Data'
-    DATASET_DIR = pathlib.Path(f'data/{DATASET_NAME}')
+    DATASET_DIR = pathlib.Path(f'/data_2/{DATASET_NAME}')
     DATASET_DIR.mkdir(parents=True, exist_ok=True)
     # _DATASET = datapoint.make_dataset(f's3://scratch-tri-global/zubair.irshad/{DATASET_DIR}/Real/train')
     _DATASET = datapoint.make_dataset(f'file://{DATASET_DIR}/Real/train')
@@ -384,7 +383,7 @@ def annotate_test_data(data_dir, source, subset, start, end):
         Properly copy handle_visibility provided by NOCS gts.
     """
     DATASET_NAME = 'ShAPO_Data'
-    DATASET_DIR = pathlib.Path(f'data/{DATASET_NAME}')
+    DATASET_DIR = pathlib.Path(f'/data/{DATASET_NAME}')
     DATASET_DIR.mkdir(parents=True, exist_ok=True)
     # _DATASET = datapoint.make_dataset(f's3://scratch-tri-global/zubair.irshad/{DATASET_DIR}/{source}/{subset}')
     _DATASET = datapoint.make_dataset(f'file://{DATASET_DIR}/{source}/{subset}')
@@ -583,13 +582,14 @@ def get_sdf_latent_embeddings(data_dir, model_list):
 
 def get_sdf_latent_embeddings_val(data_dir, model_list):
     latent_embeddings =[]
-    category_name = 'sdf_rgb_pretrained'
-    LATENT_CODE_DIR_NAME = os.path.join(data_dir, category_name,'Reconstructions','2000','Codes')
+    # category_name = 'sdf_rgb_pretrained'
+    # LATENT_CODE_DIR_NAME = os.path.join(data_dir, category_name,'Reconstructions','2000','Codes')
     for i in range(len(model_list)):
-        latent_filename = os.path.join(
-        LATENT_CODE_DIR_NAME, model_list[i] + ".pth"
-        )
-        latent_vector = load_latent_code_val(latent_filename)
+        # latent_filename = os.path.join(
+        # LATENT_CODE_DIR_NAME, model_list[i] + ".pth"
+        # )
+        # latent_vector = load_latent_code_val(latent_filename)
+        latent_vector = torch.rand(64)
         latent_embeddings.append(latent_vector.cpu().numpy())
     return latent_embeddings
 
