@@ -93,7 +93,7 @@ class OBBOutput:
     
     #make it compatible with pl distributed 
 
-    # heatmap_target = heatmap_target.to(self.heatmap.device)
+    heatmap_target = heatmap_target.to(self.heatmap.device)
 
 
 
