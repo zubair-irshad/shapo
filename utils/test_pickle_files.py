@@ -8,7 +8,7 @@ import urllib3
 # import boto3
 import numpy as np
 import zstandard as zstd
-
+import os
 
 
 def decompress_datapoint(cbuf):
