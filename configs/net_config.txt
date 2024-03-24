@@ -1,4 +1,4 @@
---max_steps=380000
+--max_steps=25
 --model_file=models/panoptic_net.py
 --model_name=res_fpn
 --output=results
