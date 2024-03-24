@@ -77,8 +77,8 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         max_epochs=epochs,
         accelerator='gpu',
-        devices=[0,2,3,4,5,6,7],
-        strategy = 'ddp',
+        devices=[0],
+        # strategy = 'ddp',
         # devices=[_GPU_TO_USE],
         callbacks=[model_checkpoint],
         val_check_interval=1.0,
@@ -91,8 +91,8 @@ if __name__ == "__main__":
     trainer = pl.Trainer(
         max_epochs=epochs,
         accelerator='gpu',
-        devices=[0,2,3,4,5,6,7],
-        strategy = 'ddp',
+        devices=[0],
+        # strategy = 'ddp',
         # devices=[_GPU_TO_USE],
         callbacks=[model_checkpoint],
         val_check_interval=1.0,

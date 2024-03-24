@@ -36,6 +36,8 @@ class PanopticModel(pl.LightningModule):
     seg_output, depth_output, small_depth_output, pose_output = self.model(
         image
     )
+
+    print("seg_output", seg_output.seg_pred.shape)
     return seg_output, depth_output, small_depth_output, pose_output
   
   # def optimizer_step(self, epoch_nb, batch_nb, optimizer, optimizer_i, second_order_closure=None):
@@ -80,7 +82,7 @@ class PanopticModel(pl.LightningModule):
     return {'loss': loss, 'log': log}
 
   def validation_step(self, batch, batch_idx):
-    image, seg_target, depth_target, pose_targets, detections_gt, scene_name = batch
+    image, seg_target, depth_target, pose_targets, _, scene_name = batch
     # dt = [di.depth_pred.cuda().unsqueeze(0) for di in depth_target]
     # dt = [di.depth_pred.to(image.device).unsqueeze(0) for di in depth_target]
 
@@ -101,7 +103,7 @@ class PanopticModel(pl.LightningModule):
       if pose_targets[0] is not None:
         loss = loss + pose_outputs.compute_loss(pose_targets, log, f'{prefix_loss}_detailed/pose')
       log['validation/loss/total'] = loss.item()
-      if batch_idx < 5 or scene_name[0] == 'fmk':
+      if batch_idx < 5:
         llog = {}
         left_image_np = extract_left_numpy_img(image[0])
         prefix = f'val/{batch_idx}'

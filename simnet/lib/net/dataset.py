@@ -60,18 +60,116 @@ class Dataset(Dataset):
   def __len__(self):
     return len(self.datapoint_handles)
 
+  # def __getitem__(self, idx):
+  #   dp = self.datapoint_handles[idx].read()
+  #   anaglyph = self.preprocces_image_func(dp.stereo)
+  #   segmentation_target = SegmentationOutput(dp.segmentation, self.hparams)
+  #   segmentation_target.convert_to_torch_from_numpy()
+  #   depth_target = DepthOutput(dp.depth, self.hparams)
+  #   depth_target.convert_to_torch_from_numpy()
+  #   pose_target = None
+  #   # for pose_dp in dp.object_poses:
+  #   #   pose_target = OBBOutput(
+  #   #       pose_dp.heat_map, pose_dp.shape_emb, pose_dp.appearance_emb, pose_dp.abs_pose, self.hparams
+  #   #   )
+  #   #   pose_target.convert_to_torch_from_numpy()
+
+  #   pose_dp = dp.object_poses[0]
+  #   pose_target = OBBOutput(
+  #       pose_dp.heat_map, pose_dp.shape_emb, pose_dp.appearance_emb, pose_dp.abs_pose, self.hparams
+  #   )
+  #   pose_target.convert_to_torch_from_numpy()
+  
+  #   scene_name = dp.scene_name
+  #   return anaglyph, segmentation_target, depth_target, pose_target, dp.detections, scene_name
+  
+  def pose_convert_to_torch_from_numpy(self, heatmap, shape_emb, appearance_emb, abs_pose_field):
+    #latent embedding shape
+    shape_emb = shape_emb.transpose((2, 0, 1))
+    shape_emb = 100.0 * shape_emb
+    shape_emb = torch.from_numpy(np.ascontiguousarray(shape_emb)).float()
+
+    #latent embedding appearance
+    appearance_emb = appearance_emb.transpose((2, 0, 1))
+    appearance_emb = 100.0 * appearance_emb
+    appearance_emb = torch.from_numpy(np.ascontiguousarray(appearance_emb)).float()
+
+    #abs pose
+    abs_pose_field =abs_pose_field.transpose((2, 0, 1))
+    abs_pose_field = 100.0 * abs_pose_field
+    abs_pose_field = torch.from_numpy(np.ascontiguousarray(abs_pose_field)).float()
+    heatmap = torch.from_numpy(np.ascontiguousarray(heatmap)).float()
+
+    return heatmap, shape_emb, appearance_emb, abs_pose_field
+
   def __getitem__(self, idx):
     dp = self.datapoint_handles[idx].read()
     anaglyph = self.preprocces_image_func(dp.stereo)
-    segmentation_target = SegmentationOutput(dp.segmentation, self.hparams)
+    # segmentation_target = SegmentationOutput(dp.segmentation, self.hparams)
+    segmentation_target = dp.segmentation
+
     segmentation_target.convert_to_torch_from_numpy()
-    depth_target = DepthOutput(dp.depth, self.hparams)
-    depth_target.convert_to_torch_from_numpy()
-    pose_target = None
-    for pose_dp in dp.object_poses:
-      pose_target = OBBOutput(
-          pose_dp.heat_map, pose_dp.shape_emb, pose_dp.appearance_emb, pose_dp.abs_pose, self.hparams
+    segmentation_target = torch.from_numpy(segmentation_target).long()
+
+
+    # depth_target = DepthOutput(dp.depth, self.hparams)
+    # depth_target.convert_to_torch_from_numpy()
+
+    depth_target = dp.depth
+    depth_target = torch.from_numpy(depth_target).float()
+
+    heatmap, shape_emb, appearance_emb, abs_pose_field = self.pose_convert_to_torch_from_numpy(
+      dp.object_poses[0].heat_map, dp.object_poses[0].shape_emb, dp.object_poses[0].appearance_emb, dp.object_poses[0].abs_pose
+    )
+
+
+
+    
+    # pose_target = None
+    # # for pose_dp in dp.object_poses:
+    # #   pose_target = OBBOutput(
+    # #       pose_dp.heat_map, pose_dp.shape_emb, pose_dp.appearance_emb, pose_dp.abs_pose, self.hparams
+    # #   )
+    # #   pose_target.convert_to_torch_from_numpy()
+
+    # pose_dp = dp.object_poses[0]
+    # pose_target = OBBOutput(
+    #     pose_dp.heat_map, pose_dp.shape_emb, pose_dp.appearance_emb, pose_dp.abs_pose, self.hparams
+    # )
+    # pose_target.convert_to_torch_from_numpy()
+  
+    # scene_name = dp.scene_name
+    # return anaglyph, segmentation_target, depth_target, pose_target, dp.detections, scene_name
+    return anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field
+  
+
+def get_config_value(hparams, prefix, key):
+  full_key = "{}_{}".format(prefix, key)
+  if hasattr(hparams, full_key):
+    return getattr(hparams, full_key)
+  else:
+    return None
+  
+if __name__ == "__main__":
+  
+  from simnet.lib.net import common
+  import argparse
+
+  parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
+  common.add_train_args(parser)
+  hparams = parser.parse_args()
+
+
+  path = get_config_value(hparams, 'train', 'path')
+
+  train_ds = datapoint.make_dataset(hparams.train_path)
+
+  dataset = Dataset(
+          path, hparams, preprocess_image_func=None, datapoint_dataset=train_ds
       )
-      pose_target.convert_to_torch_from_numpy()
-    scene_name = dp.scene_name
-    return anaglyph, segmentation_target, depth_target, pose_target, dp.detections, scene_name
+  
+  print(len(dataset))
+
+  anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field = dataset[0]
+
+  print("anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field", anaglyph, segmentation_target, depth_target, heatmap, shape_emb, appearance_emb, abs_pose_field)
