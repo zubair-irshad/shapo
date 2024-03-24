@@ -33,12 +33,13 @@ class PanopticModel(pl.LightningModule):
     self.save_hyperparameters()
 
   def forward(self, image):
-    seg_output, depth_output, small_depth_output, pose_output = self.model(
-        image
-    )
+    # seg_output, depth_output, small_depth_output, pose_output = self.model(
+    #     image
+    # )
+    seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output = self.model(image)
 
-    print("seg_output", seg_output.seg_pred.shape)
-    return seg_output, depth_output, small_depth_output, pose_output
+    print("seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output", seg_output.shape, depth_output.shape, small_disp_output.shape, heatmap_output.shape, shape_emb_output.shape, appearance_emb_output.shape, abs_pose_output.shape)
+    return seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output
   
   # def optimizer_step(self, epoch_nb, batch_nb, optimizer, optimizer_i, second_order_closure=None):
   #   super().optimizer_step(epoch_nb, batch_nb, optimizer, optimizer_i, second_order_closure)
@@ -51,9 +52,13 @@ class PanopticModel(pl.LightningModule):
 
   def training_step(self, batch, batch_idx):
     image, seg_target, depth_target, pose_targets, _, _ = batch
-    seg_output, depth_output, small_depth_output, pose_outputs = self.forward(
-        image
-    )
+
+    image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target = batch
+    # seg_output, depth_output, small_depth_output, pose_outputs = self.forward(
+    #     image
+    # )
+
+    seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output = self.forward(image)
     log = {}
     prefix = 'train'
     

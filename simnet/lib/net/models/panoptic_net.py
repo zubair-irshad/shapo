@@ -26,7 +26,8 @@ class DepthHead(nn.Module):
     self.hparams = hparams
   def forward(self, features):
     depth_pred = self.head.forward(features).squeeze(dim=1)
-    return depth_outputs.DepthOutput(depth_pred, self.hparams)
+    #return depth_outputs.DepthOutput(depth_pred, self.hparams)
+    return depth_pred
 
 
 class SegmentationHead(nn.Module):
@@ -41,38 +42,39 @@ class SegmentationHead(nn.Module):
     self.hparams = hparams
   def forward(self, features):
     pred = self.head.forward(features)
-    return segmentation_outputs.SegmentationOutput(pred, self.hparams)
+    #return segmentation_outputs.SegmentationOutput(pred, self.hparams)
+    return pred
 
 
-class PoseHead(nn.Module):
+# class PoseHead(nn.Module):
 
-  def __init__(self, backbone_output_shape, hparams):
-    super().__init__()
-    self.hparams = hparams
-    self.heatmap_head = SemSegFPNHead(
-        backbone_output_shape,
-        num_classes=1,
-        model_norm=hparams.model_norm,
-        num_filters_scale=hparams.num_filters_scale
-    )
-    self.vertex_head = PoseFPNHead(
-        backbone_output_shape,
-        num_classes=16,
-        model_norm=hparams.model_norm,
-        num_filters_scale=hparams.num_filters_scale
-    )
-    self.z_centroid_head = PoseFPNHead(
-        backbone_output_shape,
-        num_classes=1,
-        model_norm=hparams.model_norm,
-        num_filters_scale=hparams.num_filters_scale
-    )
+#   def __init__(self, backbone_output_shape, hparams):
+#     super().__init__()
+#     self.hparams = hparams
+#     self.heatmap_head = SemSegFPNHead(
+#         backbone_output_shape,
+#         num_classes=1,
+#         model_norm=hparams.model_norm,
+#         num_filters_scale=hparams.num_filters_scale
+#     )
+#     self.vertex_head = PoseFPNHead(
+#         backbone_output_shape,
+#         num_classes=16,
+#         model_norm=hparams.model_norm,
+#         num_filters_scale=hparams.num_filters_scale
+#     )
+#     self.z_centroid_head = PoseFPNHead(
+#         backbone_output_shape,
+#         num_classes=1,
+#         model_norm=hparams.model_norm,
+#         num_filters_scale=hparams.num_filters_scale
+#     )
 
-  def forward(self, features):
-    z_centroid_output = self.z_centroid_head.forward(features).squeeze(dim=1)
-    heatmap_output = self.heatmap_head.forward(features).squeeze(dim=1)
-    vertex_output = self.vertex_head.forward(features)
-    return pose_outputs.PoseOutput(heatmap_output, vertex_output, z_centroid_output, self.hparams)
+#   def forward(self, features):
+#     z_centroid_output = self.z_centroid_head.forward(features).squeeze(dim=1)
+#     heatmap_output = self.heatmap_head.forward(features).squeeze(dim=1)
+#     vertex_output = self.vertex_head.forward(features)
+#     return pose_outputs.PoseOutput(heatmap_output, vertex_output, z_centroid_output, self.hparams)
 
 class OBBHead(nn.Module):
   def __init__(self, backbone_output_shape, hparams):
@@ -107,52 +109,10 @@ class OBBHead(nn.Module):
     shape_emb_output = self.shape_embedding_head.forward(features)
     appearance_emb_output = self.appearance_embedding_head.forward(features)
     abs_pose_output = self.abs_pose_head.forward(features)
-    return abs_pose_outputs.OBBOutput(
-        heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output, self.hparams
-    )
-
-class BoxHead(nn.Module):
-
-  def __init__(self, backbone_output_shape, hparams):
-    super().__init__()
-    self.hparams = hparams
-    self.heatmap_head = SemSegFPNHead(
-        backbone_output_shape,
-        num_classes=1,
-        model_norm=hparams.model_norm,
-        num_filters_scale=hparams.num_filters_scale
-    )
-    self.vertex_head = SemSegFPNHead(
-        backbone_output_shape,
-        num_classes=4,
-        model_norm=hparams.model_norm,
-        num_filters_scale=hparams.num_filters_scale
-    )
-
-  def forward(self, features):
-    heatmap_output = self.heatmap_head.forward(features).squeeze(dim=1)
-    vertex_output = self.vertex_head.forward(features)
-    return box_outputs.BoxOutput(heatmap_output, vertex_output, self.hparams)
-
-
-class KeypointHead(nn.Module):
-
-  def __init__(self, backbone_output_shape, hparams):
-    super().__init__()
-    self.hparams = hparams
-    self.num_keypoints = hparams.num_keypoints
-    self.heatmap_head = SemSegFPNHead(
-        backbone_output_shape,
-        num_classes=self.num_keypoints,
-        model_norm=hparams.model_norm,
-        num_filters_scale=hparams.num_filters_scale
-    )
-    self.activation = nn.Sigmoid()
-
-  def forward(self, features):
-    heatmap_output = self.heatmap_head.forward(features).squeeze(dim=1)
-    heatmap_output = self.activation(heatmap_output)
-    return keypoint_outputs.KeypointOutput(heatmap_output, self.hparams)
+    # return abs_pose_outputs.OBBOutput(
+    #     heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output, self.hparams
+    # )
+    return heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output
 
 class PanopticNet(nn.Module):
 
@@ -174,8 +134,6 @@ class PanopticNet(nn.Module):
     # Add segmentation head. 6+1 categories for NOCS
     self.seg_head = SegmentationHead(shape, 7, hparams)
     self.pose_head = OBBHead(shape, hparams)
-    self.box_head = BoxHead(shape, hparams)
-    self.keypoint_head = KeypointHead(shape, hparams)
 
 
   # this works with different shapes too i.e. 640by480 and 480by640
@@ -189,8 +147,9 @@ class PanopticNet(nn.Module):
     
     if self.hparams.frozen_stereo_checkpoint is not None:
       small_disp_output = small_disp_output.detach()
-    small_depth_output = depth_outputs.DepthOutput(small_disp_output, self.hparams)
+    # small_depth_output = depth_outputs.DepthOutput(small_disp_output, self.hparams)
     seg_output = self.seg_head.forward(features)
     depth_output = self.depth_head.forward(features)
-    pose_output = self.pose_head.forward(features)
-    return seg_output, depth_output, small_depth_output, pose_output
+    #pose_output = self.pose_head.forward(features)
+    heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output = self.pose_head.forward(features)
+    return seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output
