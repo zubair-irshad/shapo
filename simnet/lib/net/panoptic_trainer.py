@@ -80,7 +80,7 @@ class PanopticModel(pl.LightningModule):
     # loss = loss + seg_output.compute_loss(seg_target, log, f'{prefix}_detailed/loss/seg')
     # if pose_targets[0] is not None:
       # loss = loss + pose_outputs.compute_loss(pose_targets, log, f'{prefix}_detailed/pose')
-    loss = loss + compute_pose_shape_loss(self, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output, log, f'{prefix}_detailed/pose', self.hparams):
+    loss = loss + compute_pose_shape_loss(self, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output, log, f'{prefix}_detailed/pose', self.hparams)
     
     log['train/loss/total'] = loss
     logger = self.logger.experiment
@@ -113,9 +113,9 @@ class PanopticModel(pl.LightningModule):
     #     real_image
     # )
 
-    image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target = batch
+    image, seg_target, depth_target, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target = batch
 
-    print("image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target", image.shape, seg_target.shape, depth_target.shape, heatmap_taget.shape, shape_emb_target.shape, appearance_emb_target.shape, abs_pose_field_target.shape)
+    print("image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target", image.shape, seg_target.shape, depth_target.shape, heatmap_target.shape, shape_emb_target.shape, appearance_emb_target.shape, abs_pose_field_target.shape)
 
     seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output = self.forward(image)
 
@@ -133,6 +133,7 @@ class PanopticModel(pl.LightningModule):
 
       loss = loss + compute_seg_loss(seg_output, seg_target, log, f'{prefix_loss}_detailed/loss/seg', self.hparams)
       
+      loss = loss + compute_pose_shape_loss(self, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output, log, f'{prefix_loss}_detailed/pose', self.hparams)
       
       # loss = depth_output.compute_loss(copy.deepcopy(depth_target), log, f'{prefix_loss}_detailed/loss/refined_disp')
       # if self.hyperparams.frozen_stereo_checkpoint is None:
