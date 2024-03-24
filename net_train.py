@@ -84,7 +84,8 @@ if __name__ == "__main__":
         val_check_interval=1.0,
         logger=wandb_logger,
         resume_from_checkpoint=hparams.checkpoint,
-        profiler="simple"
+        profiler="advanced",
+        log_every_n_steps=1
     )
   else:
     trainer = pl.Trainer(
@@ -96,7 +97,8 @@ if __name__ == "__main__":
         callbacks=[model_checkpoint],
         val_check_interval=1.0,
         logger=wandb_logger,
-        profiler="simple"
+        profiler="advanced",
+        log_every_n_steps=1
     )
 
   trainer.fit(model)
