@@ -115,7 +115,7 @@ class PanopticModel(pl.LightningModule):
 
     image, seg_target, depth_target, heatmap_target, shape_emb_target, appearance_emb_target, abs_pose_target = batch
 
-    print("image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target", image.shape, seg_target.shape, depth_target.shape, heatmap_target.shape, shape_emb_target.shape, appearance_emb_target.shape, abs_pose_field_target.shape)
+    print("image, seg_target, depth_target, heatmap_taget, shape_emb_target, appearance_emb_target, abs_pose_field_target", image.shape, seg_target.shape, depth_target.shape, heatmap_target.shape, shape_emb_target.shape, appearance_emb_target.shape, abs_pose_target.shape)
 
     seg_output, depth_output, small_disp_output, heatmap_output, shape_emb_output, appearance_emb_output, abs_pose_output = self.forward(image)
 
